@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#3b5bdb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sudoku">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+  <title>Sudoku</title>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="title">Sudoku</h1>
+      <div class="difficulty-selector">
+        <button class="diff-btn active" data-difficulty="easy">Easy</button>
+        <button class="diff-btn" data-difficulty="medium">Medium</button>
+        <button class="diff-btn" data-difficulty="hard">Hard</button>
+      </div>
+    </header>
+
+    <div class="stats-bar">
+      <div class="timer" id="timer">0:00</div>
+      <button class="new-game-btn" id="newGame">New Game</button>
+      <div class="mistakes" id="mistakes">Mistakes: 0/3</div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="undoBtn">
+        <span class="ctrl-icon">↩</span>
+        <span class="ctrl-label">Undo</span>
+      </button>
+      <button class="ctrl-btn" id="eraseBtn">
+        <span class="ctrl-icon">⌫</span>
+        <span class="ctrl-label">Erase</span>
+      </button>
+      <button class="ctrl-btn" id="notesBtn">
+        <span class="ctrl-icon">✏</span>
+        <span class="ctrl-label">Notes</span>
+      </button>
+      <button class="ctrl-btn" id="hintBtn">
+        <span class="ctrl-icon">💡</span>
+        <span class="ctrl-label">Hint</span>
+      </button>
+    </div>
+
+    <div class="numpad" id="numpad">
+      <button class="num-btn" data-num="1">1</button>
+      <button class="num-btn" data-num="2">2</button>
+      <button class="num-btn" data-num="3">3</button>
+      <button class="num-btn" data-num="4">4</button>
+      <button class="num-btn" data-num="5">5</button>
+      <button class="num-btn" data-num="6">6</button>
+      <button class="num-btn" data-num="7">7</button>
+      <button class="num-btn" data-num="8">8</button>
+      <button class="num-btn" data-num="9">9</button>
+    </div>
+
+    <div class="win-overlay" id="winOverlay" hidden>
+      <div class="win-card">
+        <div class="win-emoji">🎉</div>
+        <h2>Puzzle Solved!</h2>
+        <p class="win-time" id="winTime"></p>
+        <button class="new-game-btn" id="winNewGame">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

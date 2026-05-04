@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="24" fill="#3b5bdb"/>
+  <g stroke="white" fill="none" stroke-linecap="round">
+    <rect x="18" y="18" width="156" height="156" rx="6" stroke-width="4"/>
+    <!-- Box dividers (thick) -->
+    <line x1="18" y1="70" x2="174" y2="70" stroke-width="3"/>
+    <line x1="18" y1="122" x2="174" y2="122" stroke-width="3"/>
+    <line x1="70" y1="18" x2="70" y2="174" stroke-width="3"/>
+    <line x1="122" y1="18" x2="122" y2="174" stroke-width="3"/>
+    <!-- Cell dividers (thin) -->
+    <line x1="18"  y1="44"  x2="174" y2="44"  stroke-width="1.5" stroke-opacity="0.6"/>
+    <line x1="18"  y1="96"  x2="174" y2="96"  stroke-width="1.5" stroke-opacity="0.6"/>
+    <line x1="18"  y1="148" x2="174" y2="148" stroke-width="1.5" stroke-opacity="0.6"/>
+    <line x1="44"  y1="18"  x2="44"  y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
+    <line x1="96"  y1="18"  x2="96"  y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
+    <line x1="148" y1="18"  x2="148" y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
+  </g>
+  <text font-family="-apple-system,Arial,sans-serif" font-weight="800" font-size="26"
+        fill="white" text-anchor="middle" dominant-baseline="central">
+    <tspan x="44"  y="44">5</tspan>
+    <tspan x="148" y="44">3</tspan>
+    <tspan x="96"  y="96">7</tspan>
+    <tspan x="44"  y="148">8</tspan>
+    <tspan x="148" y="148">1</tspan>
+  </text>
+</svg>
