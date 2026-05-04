@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -48,8 +48,8 @@
     </header>
 
     <div class="stats-bar">
-      <div class="timer" id="timer">0:00</div>
       <div class="current-diff" id="currentDiff">Easy</div>
+      <div class="timer" id="timer">0:00</div>
       <div class="mistakes" id="mistakes">Mistakes: 0/3</div>
     </div>
 
@@ -113,6 +113,6 @@
     </div>
 
   </div>
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
