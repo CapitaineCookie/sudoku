@@ -13,7 +13,6 @@ class SudokuGenerator {
   }
 
   static createSolvedGrid() {
-    // Canonical valid grid, then apply random symmetry-preserving transforms
     const base = [
       [1,2,3,4,5,6,7,8,9],
       [4,5,6,7,8,9,1,2,3],
@@ -25,19 +24,14 @@ class SudokuGenerator {
       [6,7,8,9,1,2,3,4,5],
       [9,1,2,3,4,5,6,7,8],
     ];
-
-    // Remap digits to random permutation
     const perm = this.shuffle([1,2,3,4,5,6,7,8,9]);
     let g = base.map(row => row.map(n => perm[n - 1]));
 
-    // Shuffle rows within each band
     for (let b = 0; b < 3; b++) {
       const [i0, i1, i2] = this.shuffle([0, 1, 2]);
       const rows = [g[b*3+i0], g[b*3+i1], g[b*3+i2]];
       g[b*3] = rows[0]; g[b*3+1] = rows[1]; g[b*3+2] = rows[2];
     }
-
-    // Shuffle cols within each stack
     for (let s = 0; s < 3; s++) {
       const [j0, j1, j2] = this.shuffle([0, 1, 2]);
       for (let r = 0; r < 9; r++) {
@@ -47,19 +41,14 @@ class SudokuGenerator {
         g[r][s*3+2] = orig[s*3+j2];
       }
     }
-
-    // Shuffle bands
     const [b0, b1, b2] = this.shuffle([0, 1, 2]);
     g = [...g.slice(b0*3, b0*3+3), ...g.slice(b1*3, b1*3+3), ...g.slice(b2*3, b2*3+3)];
-
-    // Shuffle stacks
     const [s0, s1, s2] = this.shuffle([0, 1, 2]);
     g = g.map(row => [
       row[s0*3], row[s0*3+1], row[s0*3+2],
       row[s1*3], row[s1*3+1], row[s1*3+2],
       row[s2*3], row[s2*3+1], row[s2*3+2],
     ]);
-
     return g;
   }
 
@@ -74,18 +63,14 @@ class SudokuGenerator {
     return true;
   }
 
-  // Returns number of solutions, capped at 2 (early exit after finding 2)
   static countSolutions(g) {
     let count = 0;
     const solve = () => {
-      // Find first empty cell
       let er = -1, ec = -1;
       outer: for (let r = 0; r < 9; r++)
         for (let c = 0; c < 9; c++)
           if (!g[r][c]) { er = r; ec = c; break outer; }
-
       if (er === -1) { count++; return count > 1; }
-
       for (let n = 1; n <= 9; n++) {
         if (this.isValid(g, er, ec, n)) {
           g[er][ec] = n;
@@ -105,22 +90,29 @@ class SudokuGenerator {
     const clues = { easy: 36, medium: 28, hard: 22 }[difficulty];
     const positions = this.shuffle([...Array(81).keys()]);
     let removed = 0;
-
     for (const pos of positions) {
       if (removed >= 81 - clues) break;
       const r = Math.floor(pos / 9), c = pos % 9;
       const val = puzzle[r][c];
       puzzle[r][c] = 0;
-      // Only remove if puzzle still has a unique solution
       if (this.countSolutions(puzzle.map(row => [...row])) === 1) {
         removed++;
       } else {
         puzzle[r][c] = val;
       }
     }
-
     return { puzzle, solution };
   }
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeColor').content = dark ? '#111827' : '#3b5bdb';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  const toggle = document.getElementById('darkToggle');
+  if (toggle) toggle.checked = dark;
 }
 
 // ── Game ──────────────────────────────────────────────────────────────────────
@@ -131,6 +123,10 @@ class SudokuGame {
     this.cellEls = new Array(81);
     this.selected = null;
     this.notesMode = false;
+    this.settings = {
+      showHints:      localStorage.getItem('showHints')      !== 'false',
+      countMistakes:  localStorage.getItem('countMistakes')  !== 'false',
+    };
 
     this.bindDOM();
     this.newGame();
@@ -138,28 +134,62 @@ class SudokuGame {
   }
 
   bindDOM() {
-    this.boardEl   = document.getElementById('board');
-    this.timerEl   = document.getElementById('timer');
+    this.boardEl    = document.getElementById('board');
+    this.timerEl    = document.getElementById('timer');
     this.mistakesEl = document.getElementById('mistakes');
-    this.notesBtn  = document.getElementById('notesBtn');
+    this.notesBtn   = document.getElementById('notesBtn');
     this.winOverlay = document.getElementById('winOverlay');
-    this.winTimeEl = document.getElementById('winTime');
+    this.winTimeEl  = document.getElementById('winTime');
 
-    document.querySelectorAll('.diff-btn').forEach(btn =>
-      btn.addEventListener('click', () => {
-        document.querySelector('.diff-btn.active').classList.remove('active');
-        btn.classList.add('active');
-        this.difficulty = btn.dataset.difficulty;
+    // Init theme (syncs checkbox too)
+    applyTheme(document.documentElement.classList.contains('dark'));
+
+    // ── New Game button ───────────────────────────────────────────────────────
+    document.getElementById('newGameBtn').addEventListener('click', () => this.openNewGameModal());
+
+    document.getElementById('modalCancel').addEventListener('click', () => {
+      document.getElementById('newGameModal').hidden = true;
+    });
+    document.getElementById('newGameModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    });
+    document.querySelectorAll('.diff-card').forEach(card =>
+      card.addEventListener('click', () => {
+        this.difficulty = card.dataset.difficulty;
+        document.getElementById('newGameModal').hidden = true;
         this.newGame();
       })
     );
 
-    document.getElementById('newGame').addEventListener('click', () => this.newGame());
+    // ── Win overlay ───────────────────────────────────────────────────────────
     document.getElementById('winNewGame').addEventListener('click', () => {
       this.winOverlay.hidden = true;
-      this.newGame();
+      this.openNewGameModal();
     });
 
+    // ── Gear / settings popover ───────────────────────────────────────────────
+    const popover = document.getElementById('settingsPopover');
+    document.getElementById('gearBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      popover.hidden = !popover.hidden;
+    });
+    document.addEventListener('click', () => { popover.hidden = true; });
+    popover.addEventListener('click', e => e.stopPropagation());
+
+    document.getElementById('darkToggle').addEventListener('change', e => applyTheme(e.target.checked));
+
+    document.getElementById('hintsToggle').addEventListener('change', e => {
+      this.settings.showHints = e.target.checked;
+      localStorage.setItem('showHints', e.target.checked);
+      this.applySettings();
+    });
+    document.getElementById('mistakesToggle').addEventListener('change', e => {
+      this.settings.countMistakes = e.target.checked;
+      localStorage.setItem('countMistakes', e.target.checked);
+      this.applySettings();
+    });
+
+    // ── Controls ──────────────────────────────────────────────────────────────
     document.getElementById('undoBtn').addEventListener('click', () => this.undo());
     document.getElementById('eraseBtn').addEventListener('click', () => this.erase());
     this.notesBtn.addEventListener('click', () => this.toggleNotes());
@@ -172,28 +202,41 @@ class SudokuGame {
     document.addEventListener('keydown', e => this.handleKey(e));
   }
 
+  openNewGameModal() {
+    document.getElementById('modalWarning').hidden = this.complete || this.seconds === 0;
+    document.getElementById('newGameModal').hidden = false;
+  }
+
+  applySettings() {
+    document.getElementById('hintBtn').style.display = this.settings.showHints ? '' : 'none';
+    this.mistakesEl.style.display = this.settings.countMistakes ? '' : 'none';
+    document.getElementById('hintsToggle').checked   = this.settings.showHints;
+    document.getElementById('mistakesToggle').checked = this.settings.countMistakes;
+  }
+
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
   newGame() {
     this.stopTimer();
     const { puzzle, solution } = SudokuGenerator.generate(this.difficulty);
     this.solution = solution;
-    this.board = puzzle.map(r => [...r]);
-    this.given = puzzle.map(r => r.map(v => v !== 0));
-    this.notes = Array.from({length: 9}, () =>
-      Array.from({length: 9}, () => new Set())
-    );
-    this.history = [];
+    this.board    = puzzle.map(r => [...r]);
+    this.given    = puzzle.map(r => r.map(v => v !== 0));
+    this.notes    = Array.from({length: 9}, () => Array.from({length: 9}, () => new Set()));
+    this.history  = [];
     this.mistakes = 0;
     this.hintsUsed = 0;
-    this.seconds = 0;
+    this.seconds  = 0;
     this.complete = false;
     this.selected = null;
     this.notesMode = false;
     this.notesBtn.classList.remove('active');
     this.updateMistakesDisplay();
+    document.getElementById('currentDiff').textContent =
+      this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
     this.buildBoard();
     this.updateNumpad();
+    this.applySettings();
     this.startTimer();
   }
 
@@ -212,7 +255,7 @@ class SudokuGame {
     this.timerInterval = null;
   }
 
-  // ── Board rendering ─────────────────────────────────────────────────────────
+  // ── Board ───────────────────────────────────────────────────────────────────
 
   buildBoard() {
     this.boardEl.innerHTML = '';
@@ -222,7 +265,6 @@ class SudokuGame {
       this.boardEl.appendChild(box);
       return box;
     });
-
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         const bi = Math.floor(r/3)*3 + Math.floor(c/3);
@@ -247,19 +289,17 @@ class SudokuGame {
   }
 
   refreshCell(r, c, sel, selVal) {
-    const el = this.cellEls[r*9+c];
+    const el  = this.cellEls[r*9+c];
     const val = this.board[r][c];
     const notes = this.notes[r][c];
 
-    // Highlight class
     let cls = 'cell';
     if (sel) {
       if (r === sel.row && c === sel.col) {
         cls += ' selected';
       } else {
         const isPeer = r === sel.row || c === sel.col ||
-          (Math.floor(r/3) === Math.floor(sel.row/3) &&
-           Math.floor(c/3) === Math.floor(sel.col/3));
+          (Math.floor(r/3) === Math.floor(sel.row/3) && Math.floor(c/3) === Math.floor(sel.col/3));
         if (isPeer) {
           cls += (selVal && val === selVal) ? ' same-val' : ' peer';
         } else if (selVal && val === selVal) {
@@ -268,13 +308,9 @@ class SudokuGame {
       }
     }
 
-    if (this.given[r][c]) {
-      cls += ' given';
-    } else if (val && val !== this.solution[r][c]) {
-      cls += ' error';
-    } else if (val) {
-      cls += ' user-filled';
-    }
+    if (this.given[r][c])                          cls += ' given';
+    else if (val && val !== this.solution[r][c])   cls += ' error';
+    else if (val)                                  cls += ' user-filled';
 
     el.className = cls;
 
@@ -316,7 +352,6 @@ class SudokuGame {
       this.board[r][c] = 0;
     } else {
       if (this.board[r][c] === num) {
-        // Tap same number to clear
         this.board[r][c] = 0;
       } else {
         const wasWrong = this.board[r][c] !== 0 && this.board[r][c] !== this.solution[r][c];
@@ -324,7 +359,7 @@ class SudokuGame {
         if (num !== this.solution[r][c] && !wasWrong) {
           this.mistakes++;
           this.updateMistakesDisplay();
-          if (this.mistakes >= 3) {
+          if (this.mistakes >= 3 && this.settings.countMistakes) {
             this.updateBoard();
             setTimeout(() => this.gameOver(), 200);
             return;
@@ -388,18 +423,15 @@ class SudokuGame {
 
   handleKey(e) {
     if (this.complete) return;
-
     if (e.key >= '1' && e.key <= '9') { this.enterNumber(+e.key); return; }
     if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { this.erase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); return; }
     if (e.key === 'n') { this.toggleNotes(); return; }
 
     if (!this.selected) {
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))
-        this.selectCell(0, 0);
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) this.selectCell(0, 0);
       return;
     }
-
     const { row, col } = this.selected;
     const dirs = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
     if (dirs[e.key]) {
@@ -461,9 +493,11 @@ class SudokuGame {
       for (let c = 0; c < 9; c++)
         if (this.board[r][c] && this.board[r][c] === this.solution[r][c])
           counts[this.board[r][c]]++;
-    document.querySelectorAll('.num-btn').forEach(btn =>
-      btn.classList.toggle('complete', counts[+btn.dataset.num] >= 9)
-    );
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      const remaining = 9 - counts[+btn.dataset.num];
+      btn.classList.toggle('complete', remaining === 0);
+      btn.querySelector('.num-count').textContent = remaining > 0 ? remaining : '';
+    });
   }
 
   registerSW() {
