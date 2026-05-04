@@ -6,7 +6,7 @@ class SoundManager {
   constructor() {
     this.enabled = localStorage.getItem('sound') !== 'false';
     this.ctx = null;
-    this.active = new Set();
+    this.active = new Map();
   }
 
   get context() {
@@ -29,14 +29,17 @@ class SoundManager {
     osc.stop(ctx.currentTime + start + duration + 0.01);
   }
 
-  play(type) {
-    if (!this.enabled || this.active.has(type)) return;
+  play(type, freq = null) {
+    if (!this.enabled) return;
+    const maxConcurrent = { correct: 2, error: 1, erase: 1, hint: 1, win: 1, lose: 1 };
+    const count = this.active.get(type) || 0;
+    if (count >= (maxConcurrent[type] ?? 1)) return;
     const durations = { correct: 75, error: 200, erase: 80, hint: 300, win: 700, lose: 700 };
-    this.active.add(type);
-    setTimeout(() => this.active.delete(type), durations[type] ?? 200);
+    this.active.set(type, count + 1);
+    setTimeout(() => this.active.set(type, (this.active.get(type) || 1) - 1), durations[type] ?? 200);
     try {
       switch (type) {
-        case 'correct': this.tone(380, 'sine',     0,    0.15); break;
+        case 'correct': this.tone(freq ?? 380, 'sine', 0, 0.15); break;
         case 'error':   this.tone(180, 'triangle', 0,    0.2,  0.15); break;
         case 'erase':   this.tone(380, 'sine',     0,    0.07, 0.12); break;
         case 'hint':
@@ -348,6 +351,7 @@ class SudokuGame {
     this.updateBoard();
     if (animate) {
       let i = 0;
+      const totalGiven = this.given.flat().filter(Boolean).length;
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
           if (!this.given[r][c]) continue;
@@ -360,7 +364,8 @@ class SudokuGame {
             span.classList.remove('num-appear');
             span.style.animationDelay = '';
           }, { once: true });
-          setTimeout(() => this.sound.play('correct'), delay);
+          const freq = Math.round(300 + (i / Math.max(totalGiven - 1, 1)) * 280);
+          if (i % 3 === 0) setTimeout(() => this.sound.play('correct', freq), delay);
           i++;
         }
       }
