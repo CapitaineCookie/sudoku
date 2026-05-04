@@ -124,7 +124,7 @@ class SudokuGame {
     this.selected = null;
     this.notesMode = false;
     this.settings = {
-      showHints:      localStorage.getItem('showHints')      !== 'false',
+      showHints:      localStorage.getItem('showHints')      === 'true',
       countMistakes:  localStorage.getItem('countMistakes')  !== 'false',
     };
 
