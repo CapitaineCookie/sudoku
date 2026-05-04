@@ -2,7 +2,7 @@
   "name": "Sudoku",
   "short_name": "Sudoku",
   "description": "Classic Sudoku puzzle game",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#f0f2f8",
   "theme_color": "#3b5bdb",
