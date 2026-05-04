@@ -64,10 +64,19 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+  gap: 12px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
   padding-top: calc(16px + env(safe-area-inset-top));
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
@@ -211,6 +220,7 @@ body {
   display: flex;
   justify-content: center;
   width: 100%;
+  margin-bottom: 14px;
 }
 
 .board {
@@ -280,6 +290,7 @@ body {
   display: flex;
   gap: 10px;
   justify-content: center;
+  margin-bottom: 8px;
 }
 
 .ctrl-btn {
@@ -345,7 +356,7 @@ body {
 }
 
 .num-count {
-  font-size: clamp(7px, 1.6vw, 10px);
+  font-size: clamp(11px, 1.6vw, 13px);
   font-weight: 600;
   color: var(--muted);
   line-height: 1;
