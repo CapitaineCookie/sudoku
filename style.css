@@ -215,7 +215,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  width: min(calc(100vw - 32px), 450px);
+  width: min(100%, 450px);
   aspect-ratio: 1;
   background: var(--board-border);
   border: 3px solid var(--board-border);
@@ -316,7 +316,7 @@ body {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   gap: 5px;
-  width: min(calc(100vw - 32px), 450px);
+  width: min(100%, 450px);
 }
 
 .num-btn {
