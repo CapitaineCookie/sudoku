@@ -363,7 +363,7 @@ body {
 }
 
 .num-btn.complete { color: var(--box-line); box-shadow: none; }
-.num-btn.complete .num-count { display: none; }
+.num-btn.complete .num-count { color: var(--box-line); }
 
 /* ── New Game modal ────────────────────────────────────────────────────────── */
 
@@ -371,8 +371,6 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -449,8 +447,6 @@ html.dark .diff-card { border-color: #3730a3; }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.45);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -460,7 +456,7 @@ html.dark .diff-card { border-color: #3730a3; }
 .win-card {
   background: var(--surface);
   border-radius: 22px;
-  padding: 44px 40px;
+  padding: 28px 40px;
   text-align: center;
   box-shadow: 0 24px 64px rgba(0,0,0,0.25);
   animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -471,7 +467,15 @@ html.dark .diff-card { border-color: #3730a3; }
   to   { transform: scale(1);   opacity: 1; }
 }
 
-.win-emoji { font-size: 56px; margin-bottom: 10px; }
+@keyframes num-appear {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.cell > span { display: inline-block; }
+.num-appear  { animation: num-appear 0.15s ease-out both; }
+
+.win-emoji { font-size: 56px; margin-bottom: 10px; padding-left: 6px; }
 
 .win-card h2 {
   font-size: 26px;

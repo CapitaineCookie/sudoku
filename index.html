@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=26">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -41,6 +41,13 @@
           <span class="setting-label">Count mistakes</span>
           <label class="toggle">
             <input type="checkbox" id="mistakesToggle">
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Sound</span>
+          <label class="toggle">
+            <input type="checkbox" id="soundToggle">
             <span class="toggle-thumb"></span>
           </label>
         </div>
@@ -88,6 +95,24 @@
       <button class="num-btn" data-num="8">8<span class="num-count"></span></button>
       <button class="num-btn" data-num="9">9<span class="num-count"></span></button>
     </div>
+    <script>
+      try {
+        const s = JSON.parse(localStorage.getItem('gameState') || '{}');
+        if (s.board && s.solution) {
+          const counts = new Array(10).fill(0);
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++)
+              if (s.board[r][c] && s.board[r][c] === s.solution[r][c])
+                counts[s.board[r][c]]++;
+          document.querySelectorAll('.num-btn').forEach(btn => {
+            const n = +btn.dataset.num;
+            const remaining = 9 - counts[n];
+            btn.querySelector('.num-count').textContent = remaining;
+            if (remaining === 0) btn.classList.add('complete');
+          });
+        }
+      } catch {}
+    </script>
     </div>
 
     <!-- New Game modal -->
@@ -104,17 +129,27 @@
       </div>
     </div>
 
+    <!-- Game over overlay -->
+    <div class="win-overlay" id="gameOverOverlay" hidden>
+      <div class="win-card">
+        <div class="win-emoji">💀</div>
+        <h2>Game Over</h2>
+        <p class="win-time">Too many mistakes.</p>
+        <button class="primary-btn" id="gameOverNewGame">Ok</button>
+      </div>
+    </div>
+
     <!-- Win overlay -->
     <div class="win-overlay" id="winOverlay" hidden>
       <div class="win-card">
         <div class="win-emoji">🎉</div>
         <h2>Puzzle Solved!</h2>
         <p class="win-time" id="winTime"></p>
-        <button class="primary-btn" id="winNewGame">Play Again</button>
+        <button class="primary-btn" id="winNewGame">Ok</button>
       </div>
     </div>
 
   </div>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
