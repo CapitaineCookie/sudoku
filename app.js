@@ -129,7 +129,7 @@ class SudokuGame {
     };
 
     this.bindDOM();
-    this.newGame();
+    if (!this.restoreState()) this.newGame();
     this.registerSW();
   }
 
@@ -200,6 +200,7 @@ class SudokuGame {
     );
 
     document.addEventListener('keydown', e => this.handleKey(e));
+    window.addEventListener('beforeunload', () => this.saveState());
   }
 
   openNewGameModal() {
@@ -238,16 +239,17 @@ class SudokuGame {
     this.updateNumpad();
     this.applySettings();
     this.startTimer();
+    this.saveState();
   }
 
   startTimer() {
-    this.timerEl.textContent = '0:00';
-    this.timerInterval = setInterval(() => {
-      this.seconds++;
+    const tick = () => {
       const m = Math.floor(this.seconds / 60);
       const s = String(this.seconds % 60).padStart(2, '0');
       this.timerEl.textContent = `${m}:${s}`;
-    }, 1000);
+    };
+    tick();
+    this.timerInterval = setInterval(() => { this.seconds++; tick(); }, 1000);
   }
 
   stopTimer() {
@@ -371,6 +373,7 @@ class SudokuGame {
 
     this.updateBoard();
     this.updateNumpad();
+    this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
   }
 
@@ -383,6 +386,7 @@ class SudokuGame {
     this.notes[r][c].clear();
     this.updateBoard();
     this.updateNumpad();
+    this.saveState();
   }
 
   undo() {
@@ -393,6 +397,7 @@ class SudokuGame {
     this.selected = { row: r, col: c };
     this.updateBoard();
     this.updateNumpad();
+    this.saveState();
   }
 
   toggleNotes() {
@@ -418,6 +423,7 @@ class SudokuGame {
     this.hintsUsed++;
     this.updateBoard();
     this.updateNumpad();
+    this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
   }
 
@@ -469,6 +475,7 @@ class SudokuGame {
     this.board = this.solution.map(r => [...r]);
     this.given = Array.from({length: 9}, () => Array(9).fill(true));
     this.updateBoard();
+    this.saveState();
     alert('Game over — too many mistakes. The solution has been revealed.');
   }
 
@@ -498,6 +505,51 @@ class SudokuGame {
       btn.classList.toggle('complete', remaining === 0);
       btn.querySelector('.num-count').textContent = remaining > 0 ? remaining : '';
     });
+  }
+
+  saveState() {
+    try {
+      localStorage.setItem('gameState', JSON.stringify({
+        solution:   this.solution,
+        board:      this.board,
+        given:      this.given,
+        notes:      this.notes.map(row => row.map(cell => [...cell])),
+        difficulty: this.difficulty,
+        seconds:    this.seconds,
+        mistakes:   this.mistakes,
+        hintsUsed:  this.hintsUsed,
+        complete:   this.complete,
+      }));
+    } catch {}
+  }
+
+  restoreState() {
+    try {
+      const raw = localStorage.getItem('gameState');
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      this.solution   = s.solution;
+      this.board      = s.board;
+      this.given      = s.given;
+      this.notes      = s.notes.map(row => row.map(cell => new Set(cell)));
+      this.difficulty = s.difficulty;
+      this.seconds    = s.seconds;
+      this.mistakes   = s.mistakes;
+      this.hintsUsed  = s.hintsUsed;
+      this.complete   = s.complete;
+      this.history    = [];
+      this.selected   = null;
+      this.notesMode  = false;
+      this.notesBtn.classList.remove('active');
+      this.updateMistakesDisplay();
+      document.getElementById('currentDiff').textContent =
+        this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
+      this.buildBoard();
+      this.updateNumpad();
+      this.applySettings();
+      if (!this.complete) this.startTimer();
+      return true;
+    } catch { return false; }
   }
 
   registerSW() {
