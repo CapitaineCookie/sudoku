@@ -186,6 +186,7 @@ class SudokuGame {
     this.notesMode = false;
     this.settings = {
       showHints:      localStorage.getItem('showHints')      === 'true',
+      showTimer:      localStorage.getItem('showTimer')      !== 'false',
       countMistakes:  localStorage.getItem('countMistakes')  !== 'false',
     };
     this.sound = new SoundManager();
@@ -251,6 +252,11 @@ class SudokuGame {
       localStorage.setItem('showHints', e.target.checked);
       this.applySettings();
     });
+    document.getElementById('timerToggle').addEventListener('change', e => {
+      this.settings.showTimer = e.target.checked;
+      localStorage.setItem('showTimer', e.target.checked);
+      this.applySettings();
+    });
     document.getElementById('mistakesToggle').addEventListener('change', e => {
       this.settings.countMistakes = e.target.checked;
       localStorage.setItem('countMistakes', e.target.checked);
@@ -278,8 +284,10 @@ class SudokuGame {
 
   applySettings() {
     document.getElementById('hintBtn').style.display = this.settings.showHints ? '' : 'none';
+    this.timerEl.style.visibility = this.settings.showTimer ? '' : 'hidden';
     this.mistakesEl.style.display = this.settings.countMistakes ? '' : 'none';
-    document.getElementById('hintsToggle').checked   = this.settings.showHints;
+    document.getElementById('hintsToggle').checked    = this.settings.showHints;
+    document.getElementById('timerToggle').checked    = this.settings.showTimer;
     document.getElementById('mistakesToggle').checked = this.settings.countMistakes;
     document.getElementById('soundToggle').checked    = this.sound.enabled;
   }
@@ -417,7 +425,7 @@ class SudokuGame {
       ng.className = 'notes-grid';
       for (let n = 1; n <= 9; n++) {
         const span = document.createElement('span');
-        span.className = 'note';
+        span.className = 'note' + (notes.has(n) && selVal && n === selVal ? ' note-highlight' : '');
         span.textContent = notes.has(n) ? n : '';
         ng.appendChild(span);
       }
