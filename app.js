@@ -10,9 +10,20 @@ class SoundManager {
   }
 
   get context() {
-    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
     if (this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
+  }
+
+  warmUp() {
+    const ctx = this.context;
+    if (ctx.state === 'suspended') ctx.resume();
+    // Play a silent buffer to fully unlock the audio pipeline on iOS
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
   }
 
   tone(freq, type, start, duration, gain = 0.22) {
@@ -275,6 +286,10 @@ class SudokuGame {
 
     document.addEventListener('keydown', e => this.handleKey(e));
     window.addEventListener('beforeunload', () => this.saveState());
+
+    const warmUp = () => { this.sound.warmUp(); };
+    document.addEventListener('pointerdown', warmUp, { once: true });
+    document.addEventListener('keydown',     warmUp, { once: true });
   }
 
   openNewGameModal() {
@@ -449,6 +464,7 @@ class SudokuGame {
 
     this.history.push({ r, c, val: this.board[r][c], notes: new Set(this.notes[r][c]) });
 
+    let animateGroup = false;
     if (this.notesMode) {
       const ns = this.notes[r][c];
       ns.has(num) ? ns.delete(num) : ns.add(num);
@@ -473,11 +489,15 @@ class SudokuGame {
         } else {
           this.sound.play('correct');
         }
-        if (num === this.solution[r][c]) this.clearRelatedNotes(r, c, num);
+        if (num === this.solution[r][c]) {
+          this.clearRelatedNotes(r, c, num);
+          animateGroup = true;
+        }
       }
     }
 
     this.updateBoard();
+    if (animateGroup) this.animateCompletedGroups(r, c);
     this.updateNumpad();
     this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
@@ -530,6 +550,7 @@ class SudokuGame {
     this.hintsUsed++;
     this.sound.play('hint');
     this.updateBoard();
+    this.animateCompletedGroups(r, c);
     this.updateNumpad();
     this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
@@ -556,6 +577,45 @@ class SudokuGame {
   }
 
   // ── Game logic ──────────────────────────────────────────────────────────────
+
+  animateCompletedGroups(r, c) {
+    const complete = cells => cells.every(([row, col]) => this.board[row][col] === this.solution[row][col]);
+    const groups = [];
+
+    const rowCells = Array.from({length: 9}, (_, i) => [r, i]);
+    if (complete(rowCells)) groups.push(rowCells);
+
+    const colCells = Array.from({length: 9}, (_, i) => [i, c]);
+    if (complete(colCells)) groups.push(colCells);
+
+    const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+    const boxCells = [];
+    for (let row = br; row < br+3; row++)
+      for (let col = bc; col < bc+3; col++)
+        boxCells.push([row, col]);
+    if (complete(boxCells)) groups.push(boxCells);
+
+    if (!groups.length) return;
+
+    const seen = new Set();
+    const allCells = [];
+    for (const group of groups)
+      for (const [row, col] of group) {
+        const key = row * 9 + col;
+        if (!seen.has(key)) { seen.add(key); allCells.push([row, col]); }
+      }
+
+    allCells.forEach(([row, col], i) => {
+      const span = this.cellEls[row*9+col].querySelector('span');
+      if (!span) return;
+      span.style.animationDelay = `${i * 20}ms`;
+      span.classList.add('group-flash');
+      span.addEventListener('animationend', () => {
+        span.classList.remove('group-flash');
+        span.style.animationDelay = '';
+      }, { once: true });
+    });
+  }
 
   clearRelatedNotes(row, col, num) {
     for (let i = 0; i < 9; i++) {
