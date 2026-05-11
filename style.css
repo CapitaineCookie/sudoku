@@ -378,6 +378,15 @@ body {
 .num-btn.complete { color: var(--box-line); box-shadow: none; }
 .num-btn.complete .num-count { color: var(--box-line); }
 
+@keyframes num-btn-complete {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); background: var(--blue-pale); }
+  100% { transform: scale(1); }
+}
+.num-btn.num-complete-anim {
+  animation: num-btn-complete 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* ── New Game modal ────────────────────────────────────────────────────────── */
 
 .modal-overlay {

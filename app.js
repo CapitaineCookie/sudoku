@@ -42,10 +42,10 @@ class SoundManager {
 
   play(type, freq = null) {
     if (!this.enabled) return;
-    const maxConcurrent = { correct: 2, error: 1, erase: 1, hint: 1, win: 1, lose: 1 };
+    const maxConcurrent = { correct: 2, error: 1, erase: 1, hint: 1, digit: 1, win: 1, lose: 1 };
     const count = this.active.get(type) || 0;
     if (count >= (maxConcurrent[type] ?? 1)) return;
-    const durations = { correct: 75, error: 200, erase: 80, hint: 300, win: 700, lose: 700 };
+    const durations = { correct: 75, error: 200, erase: 80, hint: 300, digit: 400, win: 700, lose: 700 };
     this.active.set(type, count + 1);
     setTimeout(() => this.active.set(type, (this.active.get(type) || 1) - 1), durations[type] ?? 200);
     try {
@@ -53,6 +53,10 @@ class SoundManager {
         case 'correct': this.tone(freq ?? 380, 'sine', 0, 0.15); break;
         case 'error':   this.tone(180, 'triangle', 0,    0.2,  0.15); break;
         case 'erase':   this.tone(380, 'sine',     0,    0.07, 0.12); break;
+        case 'digit':
+          this.tone(520, 'sine', 0,    0.15, 0.25);
+          this.tone(780, 'sine', 0.12, 0.18, 0.20);
+          break;
         case 'hint':
           this.tone(600, 'sine', 0,    0.12);
           this.tone(900, 'sine', 0.12, 0.15);
@@ -715,8 +719,14 @@ class SudokuGame {
           counts[this.board[r][c]]++;
     document.querySelectorAll('.num-btn').forEach(btn => {
       const remaining = 9 - counts[+btn.dataset.num];
+      const wasComplete = btn.classList.contains('complete');
       btn.classList.toggle('complete', remaining === 0);
       btn.querySelector('.num-count').textContent = remaining;
+      if (remaining === 0 && !wasComplete && this.sound.ctx) {
+        this.sound.play('digit');
+        btn.classList.add('num-complete-anim');
+        btn.addEventListener('animationend', () => btn.classList.remove('num-complete-anim'), { once: true });
+      }
     });
   }
 
