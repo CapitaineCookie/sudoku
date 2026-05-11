@@ -378,7 +378,8 @@ class SudokuGame {
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
           if (!this.given[r][c]) continue;
-          const span = this.cellEls[r*9+c].querySelector('span');
+          const el = this.cellEls[r*9+c];
+          const span = el.querySelector('span');
           if (!span) continue;
           const delay = i * 18;
           span.style.animationDelay = `${delay}ms`;
@@ -387,6 +388,10 @@ class SudokuGame {
             span.classList.remove('num-appear');
             span.style.animationDelay = '';
           }, { once: true });
+          setTimeout(() => {
+            el.classList.add('flash-correct');
+            el.addEventListener('animationend', () => el.classList.remove('flash-correct'), { once: true });
+          }, delay);
           const freq = Math.round(300 + (i / Math.max(totalGiven - 1, 1)) * 280);
           if (i % 3 === 0) setTimeout(() => this.sound.play('correct', freq), delay);
           i++;
@@ -465,6 +470,7 @@ class SudokuGame {
     this.history.push({ r, c, val: this.board[r][c], notes: new Set(this.notes[r][c]) });
 
     let animateGroup = false;
+    let flashError = false;
     if (this.notesMode) {
       const ns = this.notes[r][c];
       ns.has(num) ? ns.delete(num) : ns.add(num);
@@ -486,6 +492,7 @@ class SudokuGame {
             setTimeout(() => this.gameOver(), 200);
             return;
           }
+          flashError = true;
         } else {
           this.sound.play('correct');
         }
@@ -497,7 +504,24 @@ class SudokuGame {
     }
 
     this.updateBoard();
-    if (animateGroup) this.animateCompletedGroups(r, c);
+    if (animateGroup) {
+      const groupsAnimated = this.animateCompletedGroups(r, c);
+      if (!groupsAnimated) {
+        const el = this.cellEls[r * 9 + c];
+        el.classList.add('flash-correct');
+        el.addEventListener('animationend', () => el.classList.remove('flash-correct'), { once: true });
+      }
+    }
+    if (flashError) {
+      const el = this.cellEls[r * 9 + c];
+      const span = el.querySelector('span');
+      el.classList.add('flash-error');
+      el.addEventListener('animationend', () => el.classList.remove('flash-error'), { once: true });
+      if (span) {
+        span.classList.add('group-flash');
+        span.addEventListener('animationend', () => span.classList.remove('group-flash'), { once: true });
+      }
+    }
     this.updateNumpad();
     this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
@@ -558,8 +582,9 @@ class SudokuGame {
 
   handleKey(e) {
     if (this.complete) return;
-    if (e.key >= '1' && e.key <= '9') { this.enterNumber(+e.key); return; }
-    if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { this.erase(); return; }
+    const digitMatch = e.code.match(/^Digit([1-9])$/) || e.code.match(/^Numpad([1-9])$/);
+    if (digitMatch) { this.enterNumber(+digitMatch[1]); return; }
+    if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0' || e.code === 'Numpad0' || e.code === 'Digit0') { this.erase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); return; }
     if (e.key === 'n') { this.toggleNotes(); return; }
 
@@ -595,7 +620,17 @@ class SudokuGame {
         boxCells.push([row, col]);
     if (complete(boxCells)) groups.push(boxCells);
 
-    if (!groups.length) return;
+    if (!groups.length) return false;
+
+    // Each group animates in parallel; cells in multiple groups use the earliest delay.
+    const delayMap = new Map();
+    for (const group of groups) {
+      group.forEach(([row, col], i) => {
+        const key = row * 9 + col;
+        const d = i * 20;
+        if (!delayMap.has(key) || d < delayMap.get(key)) delayMap.set(key, d);
+      });
+    }
 
     const seen = new Set();
     const allCells = [];
@@ -605,16 +640,22 @@ class SudokuGame {
         if (!seen.has(key)) { seen.add(key); allCells.push([row, col]); }
       }
 
-    allCells.forEach(([row, col], i) => {
-      const span = this.cellEls[row*9+col].querySelector('span');
-      if (!span) return;
-      span.style.animationDelay = `${i * 20}ms`;
-      span.classList.add('group-flash');
-      span.addEventListener('animationend', () => {
-        span.classList.remove('group-flash');
-        span.style.animationDelay = '';
-      }, { once: true });
+    allCells.forEach(([row, col]) => {
+      const el = this.cellEls[row*9+col];
+      const delayMs = delayMap.get(row * 9 + col);
+
+      setTimeout(() => {
+        el.classList.add('flash-group');
+        el.addEventListener('animationend', () => el.classList.remove('flash-group'), { once: true });
+
+        const span = el.querySelector('span');
+        if (span) {
+          span.classList.add('group-flash');
+          span.addEventListener('animationend', () => span.classList.remove('group-flash'), { once: true });
+        }
+      }, delayMs);
     });
+    return true;
   }
 
   clearRelatedNotes(row, col, num) {

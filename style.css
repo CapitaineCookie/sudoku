@@ -24,6 +24,9 @@
   --cell-user: #3b5bdb;
   --cell-given: #364f6b;
   --cell-note: #6c7a8d;
+  --cell-correct-flash: #86efac;
+  --cell-group-flash: #86efac;
+  --cell-error-flash: #fca5a5;
 }
 
 html.dark {
@@ -45,6 +48,9 @@ html.dark {
   --cell-user: #818cf8;
   --cell-given: #e2e8f0;
   --cell-note: #64748b;
+  --cell-correct-flash: #4ade80;
+  --cell-group-flash: #4ade80;
+  --cell-error-flash: #f87171;
 }
 
 body {
@@ -488,6 +494,27 @@ html.dark .diff-card { border-color: #3730a3; }
 .group-flash {
   animation: group-complete 0.35s ease-out both;
 }
+
+@keyframes overlay-fade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.cell.flash-correct::after,
+.cell.flash-group::after,
+.cell.flash-error::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: overlay-fade;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+.cell.flash-correct::after { background: var(--cell-correct-flash); animation-duration: 0.38s; }
+.cell.flash-group::after   { background: var(--cell-correct-flash); animation-duration: 0.75s; }
+.cell.flash-error::after   { background: var(--cell-error-flash);   animation-duration: 0.75s; }
 
 .cell > span { display: inline-block; }
 .num-appear  { animation: num-appear 0.15s ease-out both; }
