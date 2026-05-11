@@ -203,6 +203,8 @@ class SudokuGame {
       showHints:      localStorage.getItem('showHints')      === 'true',
       showTimer:      localStorage.getItem('showTimer')      !== 'false',
       countMistakes:  localStorage.getItem('countMistakes')  !== 'false',
+      smartNotes:     localStorage.getItem('smartNotes')     !== 'false',
+      vibration:      localStorage.getItem('vibration')      !== 'false',
     };
     this.sound = new SoundManager();
 
@@ -277,6 +279,14 @@ class SudokuGame {
       localStorage.setItem('countMistakes', e.target.checked);
       this.applySettings();
     });
+    document.getElementById('smartNotesToggle').addEventListener('change', e => {
+      this.settings.smartNotes = e.target.checked;
+      localStorage.setItem('smartNotes', e.target.checked);
+    });
+    document.getElementById('vibrationToggle').addEventListener('change', e => {
+      this.settings.vibration = e.target.checked;
+      localStorage.setItem('vibration', e.target.checked);
+    });
 
     // ── Controls ──────────────────────────────────────────────────────────────
     document.getElementById('undoBtn').addEventListener('click', () => this.undo());
@@ -305,10 +315,12 @@ class SudokuGame {
     document.getElementById('hintBtn').style.display = this.settings.showHints ? '' : 'none';
     this.timerEl.style.visibility = this.settings.showTimer ? '' : 'hidden';
     this.mistakesEl.style.display = this.settings.countMistakes ? '' : 'none';
-    document.getElementById('hintsToggle').checked    = this.settings.showHints;
-    document.getElementById('timerToggle').checked    = this.settings.showTimer;
-    document.getElementById('mistakesToggle').checked = this.settings.countMistakes;
-    document.getElementById('soundToggle').checked    = this.sound.enabled;
+    document.getElementById('hintsToggle').checked       = this.settings.showHints;
+    document.getElementById('timerToggle').checked       = this.settings.showTimer;
+    document.getElementById('mistakesToggle').checked    = this.settings.countMistakes;
+    document.getElementById('smartNotesToggle').checked  = this.settings.smartNotes;
+    document.getElementById('vibrationToggle').checked   = this.settings.vibration;
+    document.getElementById('soundToggle').checked       = this.sound.enabled;
   }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
@@ -477,6 +489,18 @@ class SudokuGame {
     let flashError = false;
     if (this.notesMode) {
       const ns = this.notes[r][c];
+      if (!ns.has(num) && this.settings.smartNotes) {
+        let conflict = false;
+        for (let i = 0; i < 9 && !conflict; i++)
+          if (this.board[r][i] === num || this.board[i][c] === num) conflict = true;
+        if (!conflict) {
+          const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+          for (let dr = 0; dr < 3 && !conflict; dr++)
+            for (let dc = 0; dc < 3 && !conflict; dc++)
+              if (this.board[br + dr][bc + dc] === num) conflict = true;
+        }
+        if (conflict) { if (this.settings.vibration) navigator.vibrate?.(60); return; }
+      }
       ns.has(num) ? ns.delete(num) : ns.add(num);
       this.board[r][c] = 0;
       this.sound.play('erase');

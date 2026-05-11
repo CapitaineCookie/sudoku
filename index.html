@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -23,40 +23,63 @@
       <button class="header-btn icon-btn" id="gearBtn" aria-label="Settings">⚙️</button>
 
       <div class="settings-popover" id="settingsPopover" hidden>
-        <div class="setting-row">
-          <span class="setting-label">Dark mode</span>
-          <label class="toggle">
-            <input type="checkbox" id="darkToggle">
-            <span class="toggle-thumb"></span>
-          </label>
+        <div class="setting-group">
+          <div class="setting-group-label">Theme</div>
+          <div class="setting-row">
+            <span class="setting-label">Dark mode</span>
+            <label class="toggle">
+              <input type="checkbox" id="darkToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
         </div>
-        <div class="setting-row">
-          <span class="setting-label">Show hints</span>
-          <label class="toggle">
-            <input type="checkbox" id="hintsToggle">
-            <span class="toggle-thumb"></span>
-          </label>
+        <div class="setting-group">
+          <div class="setting-group-label">Rules</div>
+          <div class="setting-row">
+            <span class="setting-label">Hints</span>
+            <label class="toggle">
+              <input type="checkbox" id="hintsToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Mistakes</span>
+            <label class="toggle">
+              <input type="checkbox" id="mistakesToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Smart notes</span>
+            <label class="toggle">
+              <input type="checkbox" id="smartNotesToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Timer</span>
+            <label class="toggle">
+              <input type="checkbox" id="timerToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
         </div>
-        <div class="setting-row">
-          <span class="setting-label">Show timer</span>
-          <label class="toggle">
-            <input type="checkbox" id="timerToggle">
-            <span class="toggle-thumb"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Count mistakes</span>
-          <label class="toggle">
-            <input type="checkbox" id="mistakesToggle">
-            <span class="toggle-thumb"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Sound</span>
-          <label class="toggle">
-            <input type="checkbox" id="soundToggle">
-            <span class="toggle-thumb"></span>
-          </label>
+        <div class="setting-group">
+          <div class="setting-group-label">Effects</div>
+          <div class="setting-row">
+            <span class="setting-label">Sound</span>
+            <label class="toggle">
+              <input type="checkbox" id="soundToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Vibration</span>
+            <label class="toggle">
+              <input type="checkbox" id="vibrationToggle">
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
         </div>
       </div>
     </header>
@@ -157,6 +180,6 @@
     </div>
 
   </div>
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>
