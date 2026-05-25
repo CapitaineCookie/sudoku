@@ -573,3 +573,44 @@ html.dark .diff-card { border-color: #3730a3; }
   background: #2f4abf;
   transform: scale(0.96);
 }
+
+/* ── Reaction bubble ───────────────────────────────────────────────────────── */
+
+.reaction-bubble {
+  position: fixed;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 200;
+  animation: bubble-float 1.4s ease-out forwards;
+  background: var(--blue);
+  border-radius: 999px;
+  padding: 0.3em 0.55em 0.3em 0.4em;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  white-space: nowrap;
+}
+
+html.dark .reaction-bubble {
+  background: #3730a3;
+}
+
+.bubble-emoji {
+  font-size: clamp(14px, 3.2vw, 17px);
+  line-height: 1;
+}
+
+.bubble-word {
+  font-size: clamp(11px, 2.4vw, 13px);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+@keyframes bubble-float {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(0)     scale(0.4); }
+  18%  { opacity: 1; transform: translateX(-50%) translateY(-6px)  scale(1.25); }
+  55%  { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-40px) scale(0.9); }
+}

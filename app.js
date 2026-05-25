@@ -298,6 +298,7 @@ class SudokuGame {
       btn.addEventListener('click', () => this.enterNumber(+btn.dataset.num))
     );
 
+
     document.addEventListener('keydown', e => this.handleKey(e));
     window.addEventListener('beforeunload', () => this.saveState());
 
@@ -487,6 +488,7 @@ class SudokuGame {
 
     let animateGroup = false;
     let flashError = false;
+    let moveClass = null;
     if (this.notesMode) {
       const ns = this.notes[r][c];
       if (!ns.has(num) && this.settings.smartNotes) {
@@ -525,6 +527,7 @@ class SudokuGame {
           this.sound.play('correct');
         }
         if (num === this.solution[r][c]) {
+          moveClass = this.classifyMove(r, c, num);
           this.clearRelatedNotes(r, c, num);
           animateGroup = true;
         }
@@ -550,7 +553,8 @@ class SudokuGame {
         span.addEventListener('animationend', () => span.classList.remove('group-flash'), { once: true });
       }
     }
-    this.updateNumpad();
+    if (moveClass) this.showReactionBubble(this.cellEls[r*9+c]);
+    this.updateNumpad(r, c);
     this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
   }
@@ -603,7 +607,7 @@ class SudokuGame {
     this.sound.play('hint');
     this.updateBoard();
     this.animateCompletedGroups(r, c);
-    this.updateNumpad();
+    this.updateNumpad(r, c);
     this.saveState();
     if (this.checkWin()) setTimeout(() => this.showWin(), 300);
   }
@@ -697,6 +701,157 @@ class SudokuGame {
         this.notes[r][c].delete(num);
   }
 
+  // ── Move classification ─────────────────────────────────────────────────────
+
+  computeAllCandidates() {
+    return Array.from({length: 9}, (_, r) =>
+      Array.from({length: 9}, (_, c) => {
+        if (this.board[r][c]) return new Set();
+        const used = new Set();
+        for (let i = 0; i < 9; i++) {
+          if (this.board[r][i]) used.add(this.board[r][i]);
+          if (this.board[i][c]) used.add(this.board[i][c]);
+        }
+        const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+        for (let dr = 0; dr < 3; dr++)
+          for (let dc = 0; dc < 3; dc++)
+            if (this.board[br+dr][bc+dc]) used.add(this.board[br+dr][bc+dc]);
+        return new Set([1,2,3,4,5,6,7,8,9].filter(n => !used.has(n)));
+      })
+    );
+  }
+
+  applyEliminationStep(cands) {
+    const c = cands.map(row => row.map(s => new Set(s)));
+    const units = [];
+    for (let i = 0; i < 9; i++) {
+      units.push(Array.from({length: 9}, (_, j) => [i, j]));
+      units.push(Array.from({length: 9}, (_, j) => [j, i]));
+    }
+    for (let br = 0; br < 3; br++)
+      for (let bc = 0; bc < 3; bc++) {
+        const box = [];
+        for (let r = br*3; r < br*3+3; r++)
+          for (let col = bc*3; col < bc*3+3; col++)
+            box.push([r, col]);
+        units.push(box);
+      }
+
+    // Naked pairs
+    for (const unit of units) {
+      const twos = unit.filter(([r, col]) => c[r][col].size === 2);
+      for (let i = 0; i < twos.length; i++)
+        for (let j = i+1; j < twos.length; j++) {
+          const [r1, c1] = twos[i], [r2, c2] = twos[j];
+          const s1 = c[r1][c1], s2 = c[r2][c2];
+          if (s1.size !== 2 || s2.size !== 2) continue;
+          let match = true;
+          for (const n of s1) if (!s2.has(n)) { match = false; break; }
+          if (!match) continue;
+          for (const [r, col] of unit) {
+            if ((r === r1 && col === c1) || (r === r2 && col === c2)) continue;
+            for (const n of s1) c[r][col].delete(n);
+          }
+        }
+    }
+
+    // Pointing pairs: box → row/col
+    for (let br = 0; br < 3; br++)
+      for (let bc = 0; bc < 3; bc++)
+        for (let n = 1; n <= 9; n++) {
+          const cells = [];
+          for (let r = br*3; r < br*3+3; r++)
+            for (let col = bc*3; col < bc*3+3; col++)
+              if (c[r][col].has(n)) cells.push([r, col]);
+          if (!cells.length) continue;
+          if (cells.every(([r]) => r === cells[0][0])) {
+            const row = cells[0][0];
+            for (let col = 0; col < 9; col++)
+              if (Math.floor(col/3) !== bc) c[row][col].delete(n);
+          }
+          if (cells.every(([, col]) => col === cells[0][1])) {
+            const col = cells[0][1];
+            for (let r = 0; r < 9; r++)
+              if (Math.floor(r/3) !== br) c[r][col].delete(n);
+          }
+        }
+
+    // Box-line reduction: row/col → box
+    for (let i = 0; i < 9; i++)
+      for (let n = 1; n <= 9; n++) {
+        const rc = Array.from({length: 9}, (_, j) => [i, j]).filter(([r, col]) => c[r][col].has(n));
+        if (rc.length && rc.every(([, col]) => Math.floor(col/3) === Math.floor(rc[0][1]/3))) {
+          const bc2 = Math.floor(rc[0][1]/3), br2 = Math.floor(i/3);
+          for (let r = br2*3; r < br2*3+3; r++)
+            for (let col = bc2*3; col < bc2*3+3; col++)
+              if (r !== i) c[r][col].delete(n);
+        }
+        const cc = Array.from({length: 9}, (_, j) => [j, i]).filter(([r]) => c[r][i].has(n));
+        if (cc.length && cc.every(([r]) => Math.floor(r/3) === Math.floor(cc[0][0]/3))) {
+          const br2 = Math.floor(cc[0][0]/3), bc2 = Math.floor(i/3);
+          for (let r = br2*3; r < br2*3+3; r++)
+            for (let col = bc2*3; col < bc2*3+3; col++)
+              if (col !== i) c[r][col].delete(n);
+        }
+      }
+
+    return c;
+  }
+
+  isHiddenSingle(r, c, num, cands) {
+    let count = 0;
+    for (let j = 0; j < 9; j++) if (cands[r][j].has(num)) count++;
+    if (count === 1) return true;
+    count = 0;
+    for (let i = 0; i < 9; i++) if (cands[i][c].has(num)) count++;
+    if (count === 1) return true;
+    count = 0;
+    const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+    for (let dr = 0; dr < 3; dr++)
+      for (let dc = 0; dc < 3; dc++)
+        if (cands[br+dr][bc+dc].has(num)) count++;
+    return count === 1;
+  }
+
+  classifyMove(r, c, num) {
+    const saved = this.board[r][c];
+    this.board[r][c] = 0;
+    const cands = this.computeAllCandidates();
+    this.board[r][c] = saved;
+    if (cands[r][c].size === 1) return null;
+    if (this.isHiddenSingle(r, c, num, cands)) return null;
+    const reduced = this.applyEliminationStep(cands);
+    if (reduced[r][c].size === 1) return 'clever';
+    if (this.isHiddenSingle(r, c, num, reduced)) return 'clever';
+    return null;
+  }
+
+showReactionBubble(el) {
+    const emojis = ['👍', '🧠', '💪'];
+    const words  = ['Nice!', 'Damn!', 'Smart!', 'Sharp!', 'Clean!', 'Slick!', 'Boom!', 'Wow!', 'Oof!'];
+    const emoji  = emojis[Math.floor(Math.random() * emojis.length)];
+    const word   = words[Math.floor(Math.random() * words.length)];
+
+    const rect   = el.getBoundingClientRect();
+    const bubble = document.createElement('div');
+    bubble.className = 'reaction-bubble';
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'bubble-emoji';
+    emojiSpan.textContent = emoji;
+
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'bubble-word';
+    wordSpan.textContent = word;
+
+    bubble.appendChild(emojiSpan);
+    bubble.appendChild(wordSpan);
+    bubble.style.left = `${rect.left + rect.width / 2}px`;
+    bubble.style.top  = `${rect.top - rect.height * 0.8}px`;
+    document.body.appendChild(bubble);
+    bubble.addEventListener('animationend', () => bubble.remove(), { once: true });
+  }
+
   checkWin() {
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -735,7 +890,33 @@ class SudokuGame {
     this.mistakesEl.textContent = `Mistakes: ${this.mistakes}/3`;
   }
 
-  updateNumpad() {
+  animateCompletedDigit(num, fromRow, fromCol) {
+    const cells = [];
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (this.board[r][c] === num && !(r === fromRow && c === fromCol))
+          cells.push([r, c]);
+
+    cells.sort((a, b) =>
+      (Math.abs(a[0] - fromRow) + Math.abs(a[1] - fromCol)) -
+      (Math.abs(b[0] - fromRow) + Math.abs(b[1] - fromCol))
+    );
+
+    cells.forEach(([r, c], i) => {
+      setTimeout(() => {
+        const el = this.cellEls[r*9+c];
+        el.classList.add('flash-group');
+        el.addEventListener('animationend', () => el.classList.remove('flash-group'), { once: true });
+        const span = el.querySelector('span');
+        if (span) {
+          span.classList.add('group-flash');
+          span.addEventListener('animationend', () => span.classList.remove('group-flash'), { once: true });
+        }
+      }, i * 40);
+    });
+  }
+
+  updateNumpad(fromRow = -1, fromCol = -1) {
     const counts = new Array(10).fill(0);
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -750,6 +931,7 @@ class SudokuGame {
         this.sound.play('digit');
         btn.classList.add('num-complete-anim');
         btn.addEventListener('animationend', () => btn.classList.remove('num-complete-anim'), { once: true });
+        this.animateCompletedDigit(+btn.dataset.num, fromRow, fromCol);
       }
     });
   }
