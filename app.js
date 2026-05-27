@@ -26,6 +26,22 @@ class SoundManager {
     src.start(0);
   }
 
+  bell(freq, start, duration, gain = 0.20) {
+    const ctx = this.context;
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const t = ctx.currentTime + start;
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.start(t);
+    osc.stop(t + duration + 0.01);
+  }
+
   tone(freq, type, start, duration, gain = 0.22) {
     const ctx = this.context;
     const osc = ctx.createOscillator();
@@ -42,24 +58,29 @@ class SoundManager {
 
   play(type, freq = null) {
     if (!this.enabled) return;
-    const maxConcurrent = { correct: 2, error: 1, erase: 1, hint: 1, digit: 1, win: 1, lose: 1 };
+    const maxConcurrent = { correct: 2, error: 1, erase: 1, note: 1, hint: 1, digit: 1, win: 1, lose: 1 };
     const count = this.active.get(type) || 0;
     if (count >= (maxConcurrent[type] ?? 1)) return;
-    const durations = { correct: 75, error: 200, erase: 80, hint: 300, digit: 400, win: 700, lose: 700 };
+    const durations = { correct: 75, error: 200, erase: 80, note: 80, hint: 400, digit: 450, win: 700, lose: 700 };
     this.active.set(type, count + 1);
     setTimeout(() => this.active.set(type, (this.active.get(type) || 1) - 1), durations[type] ?? 200);
     try {
       switch (type) {
         case 'correct': this.tone(freq ?? 380, 'sine', 0, 0.15); break;
-        case 'error':   this.tone(180, 'triangle', 0,    0.2,  0.15); break;
+        case 'error':
+          this.bell(175, 0, 0.22, 0.22);
+          this.bell(178, 0, 0.18, 0.08);
+          break;
         case 'erase':   this.tone(380, 'sine',     0,    0.07, 0.12); break;
+        case 'note':    this.tone(600, 'sine',     0,    0.06, 0.10); break;
         case 'digit':
-          this.tone(520, 'sine', 0,    0.15, 0.25);
-          this.tone(780, 'sine', 0.12, 0.18, 0.20);
+          this.tone(523, 'sine', 0,    0.12, 0.18);
+          this.tone(659, 'sine', 0.07, 0.14, 0.18);
+          this.tone(784, 'sine', 0.14, 0.25, 0.20);
           break;
         case 'hint':
-          this.tone(600, 'sine', 0,    0.12);
-          this.tone(900, 'sine', 0.12, 0.15);
+          this.tone(880, 'sine', 0,    0.18, 0.16);
+          this.tone(988, 'sine', 0.10, 0.22, 0.14);
           break;
         case 'win':
           [523, 659, 784, 1047].forEach((f, i) =>
@@ -505,7 +526,7 @@ class SudokuGame {
       }
       ns.has(num) ? ns.delete(num) : ns.add(num);
       this.board[r][c] = 0;
-      this.sound.play('erase');
+      this.sound.play('note');
     } else {
       if (this.board[r][c] === num) {
         this.board[r][c] = 0;
