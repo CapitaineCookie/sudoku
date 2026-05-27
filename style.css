@@ -540,8 +540,38 @@ html.dark .diff-card { border-color: #3730a3; }
 .cell.flash-group::after   { background: var(--cell-correct-flash); animation-duration: 0.75s; }
 .cell.flash-error::after   { background: var(--cell-error-flash);   animation-duration: 0.75s; }
 
+@keyframes cell-wave {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.18); }
+  65%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.cell-tilt { animation: cell-wave 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; z-index: 10; }
+
 .cell > span { display: inline-block; }
 .num-appear  { animation: num-appear 0.15s ease-out both; }
+
+@keyframes cell-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  65%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.cell-pop { animation: cell-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes board-shake {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-6px); }
+  30%  { transform: translateX(6px); }
+  45%  { transform: translateX(-4px); }
+  60%  { transform: translateX(4px); }
+  75%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+.board-shake { animation: board-shake 0.35s ease-out both; }
 
 .win-emoji { font-size: 56px; margin-bottom: 10px; padding-left: 6px; }
 

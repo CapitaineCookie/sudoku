@@ -542,6 +542,13 @@ class SudokuGame {
         el.classList.add('flash-correct');
         el.addEventListener('animationend', () => el.classList.remove('flash-correct'), { once: true });
       }
+      const span = this.cellEls[r * 9 + c].querySelector('span');
+      if (span) {
+        span.classList.remove('cell-pop');
+        void span.offsetWidth;
+        span.classList.add('cell-pop');
+        span.addEventListener('animationend', () => span.classList.remove('cell-pop'), { once: true });
+      }
     }
     if (flashError) {
       const el = this.cellEls[r * 9 + c];
@@ -552,6 +559,11 @@ class SudokuGame {
         span.classList.add('group-flash');
         span.addEventListener('animationend', () => span.classList.remove('group-flash'), { once: true });
       }
+      const board = document.getElementById('board');
+      board.classList.remove('board-shake');
+      void board.offsetWidth;
+      board.classList.add('board-shake');
+      board.addEventListener('animationend', () => board.classList.remove('board-shake'), { once: true });
     }
     if (moveClass) this.showReactionBubble(this.cellEls[r*9+c]);
     this.updateNumpad(r, c);
@@ -679,6 +691,11 @@ class SudokuGame {
       setTimeout(() => {
         el.classList.add('flash-group');
         el.addEventListener('animationend', () => el.classList.remove('flash-group'), { once: true });
+
+        el.classList.remove('cell-tilt');
+        void el.offsetWidth;
+        el.classList.add('cell-tilt');
+        el.addEventListener('animationend', () => el.classList.remove('cell-tilt'), { once: true });
 
         const span = el.querySelector('span');
         if (span) {
