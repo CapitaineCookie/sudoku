@@ -819,11 +819,11 @@ class SudokuGame {
     const cands = this.computeAllCandidates();
     this.board[r][c] = saved;
     if (cands[r][c].size === 1) return null;
-    if (this.isHiddenSingle(r, c, num, cands)) return 'clever';
+    if (this.isHiddenSingle(r, c, num, cands)) return null;
     const reduced = this.applyEliminationStep(cands);
     if (reduced[r][c].size === 1) return 'clever';
     if (this.isHiddenSingle(r, c, num, reduced)) return 'clever';
-    return null;
+    return 'clever';
   }
 
 showReactionBubble(el) {
