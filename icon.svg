@@ -1,26 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="24" fill="#3b5bdb"/>
-  <g stroke="white" fill="none" stroke-linecap="round">
-    <rect x="18" y="18" width="156" height="156" rx="6" stroke-width="4"/>
-    <!-- Box dividers (thick) -->
-    <line x1="18" y1="70" x2="174" y2="70" stroke-width="3"/>
-    <line x1="18" y1="122" x2="174" y2="122" stroke-width="3"/>
-    <line x1="70" y1="18" x2="70" y2="174" stroke-width="3"/>
-    <line x1="122" y1="18" x2="122" y2="174" stroke-width="3"/>
-    <!-- Cell dividers (thin) -->
-    <line x1="18"  y1="44"  x2="174" y2="44"  stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="18"  y1="96"  x2="174" y2="96"  stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="18"  y1="148" x2="174" y2="148" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="44"  y1="18"  x2="44"  y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="96"  y1="18"  x2="96"  y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="148" y1="18"  x2="148" y2="174" stroke-width="1.5" stroke-opacity="0.6"/>
-  </g>
-  <text font-family="-apple-system,Arial,sans-serif" font-weight="800" font-size="26"
-        fill="white" text-anchor="middle" dominant-baseline="central">
-    <tspan x="44"  y="44">5</tspan>
-    <tspan x="148" y="44">3</tspan>
-    <tspan x="96"  y="96">7</tspan>
-    <tspan x="44"  y="148">8</tspan>
-    <tspan x="148" y="148">1</tspan>
-  </text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="192" height="192" rx="38" fill="url(#bg)"/>
+
+  <!-- 3x3 grid of cells: size=40, gap=8, starts at x=28,y=28 -->
+
+  <!-- Row 0 -->
+  <rect x="28" y="28" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+  <!-- (0,1) empty — no fill, no number -->
+  <rect x="124" y="28" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Row 1 -->
+  <rect x="28" y="76" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+  <!-- Center cell: highlighted -->
+  <rect x="76" y="76" width="40" height="40" rx="7" fill="url(#accent)"/>
+  <rect x="124" y="76" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Row 2 -->
+  <rect x="28" y="124" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+  <rect x="76" y="124" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+  <rect x="124" y="124" width="40" height="40" rx="7" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Numbers in outer cells (given clues, subtle) -->
+  <text x="48"  y="50"  font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">5</text>
+  <text x="144" y="50"  font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">3</text>
+  <text x="48"  y="98"  font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">8</text>
+  <text x="144" y="98"  font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">2</text>
+  <text x="48"  y="146" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">6</text>
+  <text x="96"  y="146" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">1</text>
+  <text x="144" y="146" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.38)">4</text>
+  <text x="97" y="99"  font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="26" text-anchor="middle" dominant-baseline="middle" fill="white">7</text>
 </svg>

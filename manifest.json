@@ -4,8 +4,8 @@
   "description": "Classic Sudoku puzzle game",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#f0f2f8",
-  "theme_color": "#3b5bdb",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "icon-192.png",
