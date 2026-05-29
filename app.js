@@ -58,15 +58,19 @@ class SoundManager {
 
   play(type, freq = null) {
     if (!this.enabled) return;
-    const maxConcurrent = { correct: 2, error: 1, erase: 1, note: 1, hint: 1, digit: 1, win: 1, lose: 1 };
+    const maxConcurrent = { correct: 2, reveal: 2, error: 1, erase: 1, note: 1, hint: 1, digit: 1, win: 1, lose: 1 };
     const count = this.active.get(type) || 0;
     if (count >= (maxConcurrent[type] ?? 1)) return;
-    const durations = { correct: 75, error: 200, erase: 80, note: 80, hint: 400, digit: 450, win: 700, lose: 700 };
+    const durations = { correct: 230, reveal: 75, error: 200, erase: 80, note: 80, hint: 400, digit: 450, win: 700, lose: 700 };
     this.active.set(type, count + 1);
     setTimeout(() => this.active.set(type, (this.active.get(type) || 1) - 1), durations[type] ?? 200);
     try {
       switch (type) {
-        case 'correct': this.tone(freq ?? 380, 'sine', 0, 0.15); break;
+        case 'correct':
+          this.tone(freq ?? 480, 'sine', 0,    0.10, 0.35);
+          this.tone(freq ?? 640, 'sine', 0.08, 0.15, 0.28);
+          break;
+        case 'reveal': this.tone(freq ?? 380, 'sine', 0, 0.15, 0.22); break;
         case 'error':
           this.bell(175, 0, 0.22, 0.22);
           this.bell(178, 0, 0.18, 0.08);
@@ -431,7 +435,7 @@ class SudokuGame {
             el.addEventListener('animationend', () => el.classList.remove('flash-correct'), { once: true });
           }, delay);
           const freq = Math.round(300 + (i / Math.max(totalGiven - 1, 1)) * 280);
-          if (i % 3 === 0) setTimeout(() => this.sound.play('correct', freq), delay);
+          if (i % 3 === 0) setTimeout(() => this.sound.play('reveal', freq), delay);
           i++;
         }
       }
@@ -687,6 +691,8 @@ class SudokuGame {
 
     if (!groups.length) return false;
 
+    this.sound.play('digit');
+
     // Each group animates in parallel; cells in multiple groups use the earliest delay.
     const delayMap = new Map();
     for (const group of groups) {
@@ -836,14 +842,17 @@ class SudokuGame {
     return c;
   }
 
-  isHiddenSingle(r, c, num, cands) {
+  isHiddenSingleInLine(r, c, num, cands) {
     let count = 0;
     for (let j = 0; j < 9; j++) if (cands[r][j].has(num)) count++;
     if (count === 1) return true;
     count = 0;
     for (let i = 0; i < 9; i++) if (cands[i][c].has(num)) count++;
-    if (count === 1) return true;
-    count = 0;
+    return count === 1;
+  }
+
+  isHiddenSingleInBox(r, c, num, cands) {
+    let count = 0;
     const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
     for (let dr = 0; dr < 3; dr++)
       for (let dc = 0; dc < 3; dc++)
@@ -857,18 +866,18 @@ class SudokuGame {
     const cands = this.computeAllCandidates();
     this.board[r][c] = saved;
     if (cands[r][c].size === 1) return null;
-    if (this.isHiddenSingle(r, c, num, cands)) return null;
+    if (this.isHiddenSingleInBox(r, c, num, cands)) return null;
+    if (this.isHiddenSingleInLine(r, c, num, cands)) return 'clever';
     const reduced = this.applyEliminationStep(cands);
-    if (reduced[r][c].size === 1) return 'clever';
-    if (this.isHiddenSingle(r, c, num, reduced)) return 'clever';
+    if (reduced[r][c].size === 1) return null;
+    if (this.isHiddenSingleInBox(r, c, num, reduced)) return null;
+    if (this.isHiddenSingleInLine(r, c, num, reduced)) return 'clever';
     return 'clever';
   }
 
 showReactionBubble(el) {
-    const emojis = ['👍', '🧠', '💪'];
-    const words  = ['Nice!', 'Damn!', 'Smart!', 'Sharp!', 'Clean!', 'Slick!', 'Boom!', 'Wow!', 'Oof!'];
-    const emoji  = emojis[Math.floor(Math.random() * emojis.length)];
-    const word   = words[Math.floor(Math.random() * words.length)];
+    const pairs = [['💥', 'Boom!'], ['💪', 'Oof!'], ['🧠', 'Damn!'], ['👍', 'Nice!']];
+    const [emoji, word] = pairs[Math.floor(Math.random() * pairs.length)];
 
     const rect   = el.getBoundingClientRect();
     const bubble = document.createElement('div');
