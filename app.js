@@ -508,6 +508,7 @@ class SudokuGame {
     if (!this.selected || this.complete) return;
     const { row: r, col: c } = this.selected;
     if (this.given[r][c]) return;
+    if (this.board[r][c] === this.solution[r][c]) return;
 
     this.history.push({ r, c, val: this.board[r][c], notes: new Set(this.notes[r][c]) });
 
@@ -600,6 +601,7 @@ class SudokuGame {
     if (!this.selected || this.complete) return;
     const { row: r, col: c } = this.selected;
     if (this.given[r][c]) return;
+    if (this.board[r][c] === this.solution[r][c]) return;
     this.history.push({ r, c, val: this.board[r][c], notes: new Set(this.notes[r][c]) });
     this.board[r][c] = 0;
     this.notes[r][c].clear();

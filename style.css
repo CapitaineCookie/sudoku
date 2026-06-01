@@ -272,7 +272,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(22px, 3.8vw, 24px);
+  font-size: clamp(26px, 4.2vw, 28px);
   font-weight: 700;
   color: var(--cell-given);
   cursor: pointer;
@@ -301,7 +301,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(8px, 2.2vw, 11px);
+  font-size: clamp(10px, 2.6vw, 13px);
   font-weight: 600;
   color: var(--cell-note);
   line-height: 1;
@@ -329,7 +329,7 @@ body {
   background: var(--surface);
   border: none;
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 11px 14px 9px;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.10);
   transition: all 0.1s;
