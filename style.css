@@ -83,6 +83,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  position: relative;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
@@ -100,6 +101,10 @@ body {
   font-weight: 800;
   color: var(--blue);
   letter-spacing: -0.5px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .header-btn {
@@ -125,6 +130,13 @@ body {
   line-height: 1;
   background: transparent;
   box-shadow: none;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
 }
 
 /* ── Settings popover ──────────────────────────────────────────────────────── */
@@ -444,7 +456,7 @@ body {
   margin-bottom: 16px;
 }
 
-.diff-card {
+.diff-card, .hint-card {
   padding: 14px;
   border: 2px solid var(--blue-pale);
   border-radius: 12px;
@@ -456,9 +468,9 @@ body {
   transition: all 0.15s;
 }
 
-html.dark .diff-card { border-color: #3730a3; }
+html.dark .diff-card, html.dark .hint-card { border-color: #3730a3; }
 
-.diff-card:active {
+.diff-card:active, .hint-card:active {
   background: var(--blue);
   color: white;
   border-color: var(--blue);
@@ -602,6 +614,144 @@ html.dark .diff-card { border-color: #3730a3; }
 .primary-btn:active {
   background: #2f4abf;
   transform: scale(0.96);
+}
+
+/* ── Advanced hint banner ──────────────────────────────────────────────────── */
+
+.hint-banner {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 450px);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 0 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  visibility: hidden;
+  z-index: 10;
+}
+
+.hint-banner.visible {
+  visibility: visible;
+}
+
+.hint-banner-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hint-banner-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.1s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.hint-banner-btn:active { opacity: 0.8; transform: scale(0.95); }
+.hint-banner-btn:disabled { background: var(--muted); cursor: default; opacity: 0.6; }
+
+/* Pulsing highlight on the hinted cell */
+@keyframes hint-pulse {
+  0%   { box-shadow: inset 0 0 0 2px var(--blue); }
+  50%  { box-shadow: inset 0 0 0 3px var(--blue), 0 0 8px 2px color-mix(in srgb, var(--blue) 40%, transparent); }
+  100% { box-shadow: inset 0 0 0 2px var(--blue); }
+}
+
+.cell.hint-target {
+  animation: hint-pulse 1.2s ease-in-out infinite;
+}
+
+/* Advanced hint modal card extras */
+.adv-hint-card-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.adv-hint-card-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* ── Technique analysis list ───────────────────────────────────────────────── */
+
+.technique-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.technique-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  opacity: 0.35;
+}
+
+.technique-row.technique-testing,
+.technique-row.checked,
+.technique-row.found {
+  opacity: 1;
+}
+
+.technique-row.checked {
+  background: #dcfce7;
+  color: #166534;
+}
+
+html.dark .technique-row.checked {
+  background: #14532d;
+  color: #86efac;
+}
+
+.technique-row.found {
+  background: var(--blue-pale);
+  color: var(--blue);
+}
+
+html.dark .technique-row.found {
+  background: #1e1b4b;
+}
+
+.technique-check {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+@keyframes technique-test {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.technique-row.technique-testing {
+  animation: technique-test 0.3s ease-in-out;
+  color: var(--navy);
 }
 
 /* ── Reaction bubble ───────────────────────────────────────────────────────── */

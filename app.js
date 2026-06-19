@@ -319,6 +319,34 @@ class SudokuGame {
     this.notesBtn.addEventListener('click', () => this.toggleNotes());
     document.getElementById('hintBtn').addEventListener('click', () => this.hint());
 
+    // ── Advanced hint ─────────────────────────────────────────────────────────
+    const advModal = document.getElementById('advHintModal');
+    document.getElementById('advHintBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      if (!this.complete) advModal.hidden = false;
+    });
+    document.getElementById('advHintCancel').addEventListener('click', () => { advModal.hidden = true; });
+    advModal.addEventListener('click', e => { if (e.target === advModal) advModal.hidden = true; });
+    document.getElementById('advHintHighlight').addEventListener('click', () => {
+      advModal.hidden = true;
+      this.applyAdvancedHint();
+    });
+    document.getElementById('advHintAnalyze').addEventListener('click', () => {
+      advModal.hidden = true;
+      this.analyzeTechniques();
+    });
+    document.getElementById('techniqueClose').addEventListener('click', () => {
+      document.getElementById('techniqueModal').hidden = true;
+    });
+    document.getElementById('techniqueModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    });
+    document.getElementById('hintTechniqueBtn').addEventListener('click', () => {
+      const btn = document.getElementById('hintTechniqueBtn');
+      if (btn.dataset.state === 'gotit') this.clearHint();
+      else this.revealTechnique();
+    });
+
     document.querySelectorAll('.num-btn').forEach(btn =>
       btn.addEventListener('click', () => this.enterNumber(+btn.dataset.num))
     );
@@ -365,6 +393,9 @@ class SudokuGame {
     this.complete = false;
     this.selected = null;
     this.notesMode = false;
+    this.hintCell = null;
+    this.hintTechnique = null;
+    document.getElementById('hintBanner').classList.remove('visible');
     this.notesBtn.classList.remove('active');
     this.updateMistakesDisplay();
     document.getElementById('currentDiff').textContent =
@@ -474,6 +505,8 @@ class SudokuGame {
     else if (val && val !== this.solution[r][c])   cls += ' error';
     else if (val)                                  cls += ' user-filled';
 
+    if (this.hintCell && this.hintCell.r === r && this.hintCell.c === c) cls += ' hint-target';
+
     el.className = cls;
 
     if (val) {
@@ -506,6 +539,7 @@ class SudokuGame {
 
   enterNumber(num) {
     if (!this.selected || this.complete) return;
+    this.clearHint();
     const { row: r, col: c } = this.selected;
     if (this.given[r][c]) return;
     if (this.board[r][c] === this.solution[r][c]) return;
@@ -599,6 +633,7 @@ class SudokuGame {
 
   erase() {
     if (!this.selected || this.complete) return;
+    this.clearHint();
     const { row: r, col: c } = this.selected;
     if (this.given[r][c]) return;
     if (this.board[r][c] === this.solution[r][c]) return;
@@ -613,6 +648,7 @@ class SudokuGame {
 
   undo() {
     if (this.complete || !this.history.length) return;
+    this.clearHint();
     const { r, c, val, notes } = this.history.pop();
     this.board[r][c] = val;
     this.notes[r][c] = notes;
@@ -749,19 +785,19 @@ class SudokuGame {
 
   // ── Move classification ─────────────────────────────────────────────────────
 
-  computeAllCandidates() {
+  computeAllCandidates(board = this.board) {
     return Array.from({length: 9}, (_, r) =>
       Array.from({length: 9}, (_, c) => {
-        if (this.board[r][c]) return new Set();
+        if (board[r][c]) return new Set();
         const used = new Set();
         for (let i = 0; i < 9; i++) {
-          if (this.board[r][i]) used.add(this.board[r][i]);
-          if (this.board[i][c]) used.add(this.board[i][c]);
+          if (board[r][i]) used.add(board[r][i]);
+          if (board[i][c]) used.add(board[i][c]);
         }
         const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
         for (let dr = 0; dr < 3; dr++)
           for (let dc = 0; dc < 3; dc++)
-            if (this.board[br+dr][bc+dc]) used.add(this.board[br+dr][bc+dc]);
+            if (board[br+dr][bc+dc]) used.add(board[br+dr][bc+dc]);
         return new Set([1,2,3,4,5,6,7,8,9].filter(n => !used.has(n)));
       })
     );
@@ -901,6 +937,277 @@ showReactionBubble(el) {
     bubble.addEventListener('animationend', () => bubble.remove(), { once: true });
   }
 
+  // ── Advanced hint ───────────────────────────────────────────────────────────
+
+  clearHint() {
+    if (!this.hintCell) return;
+    this.hintCell = null;
+    this.hintTechnique = null;
+    document.getElementById('hintBanner').classList.remove('visible');
+    this.updateBoard();
+  }
+
+  findHintCell() {
+    // Build a clean board: treat wrong user entries as empty
+    const clean = this.board.map((row, r) =>
+      row.map((v, c) => (v === this.solution[r][c] ? v : 0))
+    );
+    const cands = this.computeAllCandidates(clean);
+
+    // Pass 1 — Naked Single (only one candidate)
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (!clean[r][c] && cands[r][c].size === 1)
+          return { r, c, technique: 'naked-single' };
+
+    // Pass 2 — Hidden Single in box
+    for (let br = 0; br < 3; br++)
+      for (let bc = 0; bc < 3; bc++)
+        for (let n = 1; n <= 9; n++) {
+          const hits = [];
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++) {
+              const r = br*3+dr, c = bc*3+dc;
+              if (!clean[r][c] && cands[r][c].has(n)) hits.push([r, c]);
+            }
+          if (hits.length === 1) return { r: hits[0][0], c: hits[0][1], technique: 'hidden-single-box' };
+        }
+
+    // Pass 3 — Hidden Single in row / col
+    for (let i = 0; i < 9; i++)
+      for (let n = 1; n <= 9; n++) {
+        const rowHits = [], colHits = [];
+        for (let j = 0; j < 9; j++) {
+          if (!clean[i][j] && cands[i][j].has(n)) rowHits.push([i, j]);
+          if (!clean[j][i] && cands[j][i].has(n)) colHits.push([j, i]);
+        }
+        if (rowHits.length === 1) return { r: rowHits[0][0], c: rowHits[0][1], technique: 'hidden-single-line' };
+        if (colHits.length === 1) return { r: colHits[0][0], c: colHits[0][1], technique: 'hidden-single-line' };
+      }
+
+    // Pass 4 — same checks after one round of elimination (pointing pairs, naked pairs, box-line)
+    const reduced = this.applyEliminationStep(cands);
+
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (!clean[r][c] && reduced[r][c].size === 1)
+          return { r, c, technique: 'naked-single-after-elim' };
+
+    for (let br = 0; br < 3; br++)
+      for (let bc = 0; bc < 3; bc++)
+        for (let n = 1; n <= 9; n++) {
+          const hits = [];
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++) {
+              const r = br*3+dr, c = bc*3+dc;
+              if (!clean[r][c] && reduced[r][c].has(n)) hits.push([r, c]);
+            }
+          if (hits.length === 1) return { r: hits[0][0], c: hits[0][1], technique: 'hidden-single-box-after-elim' };
+        }
+
+    for (let i = 0; i < 9; i++)
+      for (let n = 1; n <= 9; n++) {
+        const rowHits = [], colHits = [];
+        for (let j = 0; j < 9; j++) {
+          if (!clean[i][j] && reduced[i][j].has(n)) rowHits.push([i, j]);
+          if (!clean[j][i] && reduced[j][i].has(n)) colHits.push([j, i]);
+        }
+        if (rowHits.length === 1) return { r: rowHits[0][0], c: rowHits[0][1], technique: 'hidden-single-line-after-elim' };
+        if (colHits.length === 1) return { r: colHits[0][0], c: colHits[0][1], technique: 'hidden-single-line-after-elim' };
+      }
+
+    return null;
+  }
+
+  applyAdvancedHint() {
+    if (this.complete) return;
+    this._techniqueTimers?.forEach(clearTimeout);
+    this._techniqueTimers = [];
+    document.getElementById('techniqueModal').hidden = true;
+    this.clearHint();
+    const result = this.findHintCell();
+    const banner = document.getElementById('hintBanner');
+    const bannerText = document.getElementById('hintBannerText');
+    const techBtn = document.getElementById('hintTechniqueBtn');
+
+    if (!result) {
+      bannerText.textContent = 'No easy cell found — try a harder technique';
+      techBtn.hidden = true;
+      banner.classList.add('visible');
+      return;
+    }
+
+    this.hintCell = { r: result.r, c: result.c };
+    this.hintTechnique = result.technique;
+    this.selectCell(result.r, result.c);
+    this.updateBoard();
+
+    bannerText.textContent = '💡 Cell highlighted';
+    techBtn.textContent = 'What technique?';
+    techBtn.dataset.state = '';
+    banner.classList.add('visible');
+    this.sound.play('hint');
+  }
+
+  revealTechnique() {
+    if (!this.hintTechnique) return;
+    const descriptions = {
+      'naked-single':                   'Naked Single — only one number can go here',
+      'hidden-single-box':              'Hidden Single (box) — this number fits in only one cell of its box',
+      'hidden-single-line':             'Hidden Single (row/col) — this number fits in only one cell of its row or column',
+      'naked-single-after-elim':        'Naked Single — revealed after applying pointing pairs / naked pairs',
+      'hidden-single-box-after-elim':   'Hidden Single (box) — revealed after applying pointing pairs / naked pairs',
+      'hidden-single-line-after-elim':  'Hidden Single (row/col) — revealed after applying pointing pairs / naked pairs',
+    };
+    const bannerText = document.getElementById('hintBannerText');
+    const techBtn = document.getElementById('hintTechniqueBtn');
+    bannerText.textContent = descriptions[this.hintTechnique] ?? 'Try eliminating candidates first';
+    techBtn.textContent = 'Got it';
+    techBtn.dataset.state = 'gotit';
+  }
+
+  analyzeTechniques() {
+    if (this.complete) return;
+    this.clearHint();
+    const clean = this.board.map((row, r) =>
+      row.map((v, c) => (v === this.solution[r][c] ? v : 0))
+    );
+    const cands = this.computeAllCandidates(clean);
+    const reduced = this.applyEliminationStep(cands);
+
+    const steps = [
+      {
+        label: 'Naked Single',
+        test: () => {
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++)
+              if (!clean[r][c] && cands[r][c].size === 1) return true;
+          return false;
+        },
+      },
+      {
+        label: 'Hidden Single (box)',
+        test: () => {
+          for (let br = 0; br < 3; br++)
+            for (let bc = 0; bc < 3; bc++)
+              for (let n = 1; n <= 9; n++) {
+                let count = 0;
+                for (let dr = 0; dr < 3; dr++)
+                  for (let dc = 0; dc < 3; dc++)
+                    if (!clean[br*3+dr][bc*3+dc] && cands[br*3+dr][bc*3+dc].has(n)) count++;
+                if (count === 1) return true;
+              }
+          return false;
+        },
+      },
+      {
+        label: 'Hidden Single (row / col)',
+        test: () => {
+          for (let i = 0; i < 9; i++)
+            for (let n = 1; n <= 9; n++) {
+              let row = 0, col = 0;
+              for (let j = 0; j < 9; j++) {
+                if (!clean[i][j] && cands[i][j].has(n)) row++;
+                if (!clean[j][i] && cands[j][i].has(n)) col++;
+              }
+              if (row === 1 || col === 1) return true;
+            }
+          return false;
+        },
+      },
+      {
+        label: 'Naked Single (after elimination)',
+        test: () => {
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++)
+              if (!clean[r][c] && reduced[r][c].size === 1) return true;
+          return false;
+        },
+      },
+      {
+        label: 'Hidden Single box (after elimination)',
+        test: () => {
+          for (let br = 0; br < 3; br++)
+            for (let bc = 0; bc < 3; bc++)
+              for (let n = 1; n <= 9; n++) {
+                let count = 0;
+                for (let dr = 0; dr < 3; dr++)
+                  for (let dc = 0; dc < 3; dc++)
+                    if (!clean[br*3+dr][bc*3+dc] && reduced[br*3+dr][bc*3+dc].has(n)) count++;
+                if (count === 1) return true;
+              }
+          return false;
+        },
+      },
+      {
+        label: 'Hidden Single row/col (after elimination)',
+        test: () => {
+          for (let i = 0; i < 9; i++)
+            for (let n = 1; n <= 9; n++) {
+              let row = 0, col = 0;
+              for (let j = 0; j < 9; j++) {
+                if (!clean[i][j] && reduced[i][j].has(n)) row++;
+                if (!clean[j][i] && reduced[j][i].has(n)) col++;
+              }
+              if (row === 1 || col === 1) return true;
+            }
+          return false;
+        },
+      },
+    ];
+
+    const results = [];
+    let found = false;
+    for (const step of steps) {
+      const matches = !found && step.test();
+      results.push({ label: step.label, matches, tested: false });
+      if (matches) { found = true; break; }
+      results[results.length - 1].tested = true;
+    }
+
+    const list = document.getElementById('techniqueList');
+    list.innerHTML = '';
+    const rows = steps.map((step, i) => {
+      const row = document.createElement('div');
+      row.className = 'technique-row';
+      const check = document.createElement('span');
+      check.className = 'technique-check';
+      check.textContent = '?';
+      const label = document.createElement('span');
+      label.textContent = step.label;
+      row.appendChild(check);
+      row.appendChild(label);
+      list.appendChild(row);
+      return { row, check };
+    });
+
+    this._techniqueTimers?.forEach(clearTimeout);
+    this._techniqueTimers = [];
+
+    document.getElementById('techniqueModal').hidden = false;
+
+    const STEP = 900;
+    const RESOLVE = 500;
+    results.forEach((result, i) => {
+      this._techniqueTimers.push(setTimeout(() => {
+        const { row, check } = rows[i];
+        row.classList.add('technique-testing');
+        this._techniqueTimers.push(setTimeout(() => {
+          row.classList.remove('technique-testing');
+          if (result.matches) {
+            check.textContent = '💡';
+            row.classList.add('found');
+            this.sound.play('hint');
+          } else {
+            check.textContent = '✓';
+            row.classList.add('checked');
+            this.sound.play('correct');
+          }
+        }, RESOLVE));
+      }, i * STEP));
+    });
+  }
+
   checkWin() {
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -1018,6 +1325,8 @@ showReactionBubble(el) {
       this.history    = [];
       this.selected   = null;
       this.notesMode  = false;
+      this.hintCell   = null;
+      this.hintTechnique = null;
       this.notesBtn.classList.remove('active');
       this.updateMistakesDisplay();
       document.getElementById('currentDiff').textContent =

@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -20,7 +20,10 @@
     <header class="header">
       <button class="header-btn icon-btn" id="newGameBtn" aria-label="New Game">🔄</button>
       <h1 class="title">Sudoku</h1>
-      <button class="header-btn icon-btn" id="gearBtn" aria-label="Settings">⚙️</button>
+      <div class="header-right">
+        <button class="header-btn icon-btn" id="advHintBtn" aria-label="Smart Hint">🔍</button>
+        <button class="header-btn icon-btn" id="gearBtn" aria-label="Settings">⚙️</button>
+      </div>
 
       <div class="settings-popover" id="settingsPopover" hidden>
         <div class="setting-group">
@@ -85,6 +88,11 @@
     </header>
 
     <div class="main">
+    <div class="hint-banner" id="hintBanner">
+      <span class="hint-banner-text" id="hintBannerText"></span>
+      <button class="hint-banner-btn" id="hintTechniqueBtn">What technique?</button>
+    </div>
+
     <div class="stats-bar">
       <div class="current-diff" id="currentDiff">Easy</div>
       <div class="timer" id="timer">0:00</div>
@@ -145,6 +153,33 @@
     </script>
     </div>
 
+    <!-- Technique analysis modal -->
+    <div class="modal-overlay" id="techniqueModal" hidden>
+      <div class="modal">
+        <h2 class="modal-title">Techniques</h2>
+        <div class="technique-list" id="techniqueList"></div>
+        <button class="primary-btn" id="techniqueClose">Got it</button>
+      </div>
+    </div>
+
+    <!-- Advanced Hint modal -->
+    <div class="modal-overlay" id="advHintModal" hidden>
+      <div class="modal">
+        <h2 class="modal-title">Smart Hint</h2>
+        <div class="diff-cards">
+          <button class="hint-card" id="advHintHighlight">
+            <span class="adv-hint-card-title">🔦 Cell</span>
+            <span class="adv-hint-card-sub">Show the easiest cell to fill</span>
+          </button>
+          <button class="hint-card" id="advHintAnalyze">
+            <span class="adv-hint-card-title">📋 Technique</span>
+            <span class="adv-hint-card-sub">Show which techniques apply</span>
+          </button>
+        </div>
+        <button class="modal-cancel" id="advHintCancel">Cancel</button>
+      </div>
+    </div>
+
     <!-- New Game modal -->
     <div class="modal-overlay" id="newGameModal" hidden>
       <div class="modal">
@@ -180,6 +215,6 @@
     </div>
 
   </div>
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>
