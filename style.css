@@ -56,6 +56,10 @@ html.dark {
   --cell-error-flash: #f87171;
 }
 
+html {
+  max-height: 1000000px;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
