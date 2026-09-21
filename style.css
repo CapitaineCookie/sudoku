@@ -3,6 +3,9 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 :root {
@@ -51,11 +54,6 @@ html.dark {
   --cell-correct-flash: #4ade80;
   --cell-group-flash: #4ade80;
   --cell-error-flash: #f87171;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 body {
