@@ -3,7 +3,6 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
-  -moz-text-size-adjust: none;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
 }
@@ -267,8 +266,8 @@ body {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   width: min(100%, 450px);
   aspect-ratio: 1;
   background: var(--board-border);
@@ -280,8 +279,8 @@ body {
 
 .box {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--box-line);
 }
@@ -298,6 +297,9 @@ body {
   user-select: none;
   transition: background 0.08s;
   position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 .cell.selected    { background: var(--cell-selected); }
@@ -309,8 +311,8 @@ body {
 /* Notes grid */
 .notes-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   width: 100%;
   height: 100%;
   padding: 1px;
@@ -374,7 +376,7 @@ body {
 
 .numpad {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 5px;
   width: min(100%, 450px);
 }
@@ -395,6 +397,8 @@ body {
   justify-content: center;
   padding: 5px 4px 9px;
   gap: 1px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .num-btn:active {
