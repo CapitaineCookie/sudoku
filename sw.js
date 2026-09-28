@@ -1,4 +1,4 @@
-const CACHE = 'sudoku-v10';
+const CACHE = 'sudoku-v21';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,11 @@ const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './puzzles/level1.js',
+  './puzzles/level2.js',
+  './puzzles/level3.js',
+  './puzzles/level4.js',
+  './puzzles/level5.js',
 ];
 
 self.addEventListener('install', e => {

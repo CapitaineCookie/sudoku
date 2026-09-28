@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=34">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -183,14 +183,24 @@
     <!-- New Game modal -->
     <div class="modal-overlay" id="newGameModal" hidden>
       <div class="modal">
-        <h2 class="modal-title">New Game</h2>
-        <p class="modal-warning" id="modalWarning" hidden>Your current game will be lost</p>
-        <div class="diff-cards">
-          <button class="diff-card" data-difficulty="easy">Easy</button>
-          <button class="diff-card" data-difficulty="medium">Medium</button>
-          <button class="diff-card" data-difficulty="hard">Hard</button>
+        <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+        <h2 class="modal-title" style="margin-bottom:4px">New Puzzle</h2>
+        <p class="modal-subtitle">Choose a difficulty</p>
+        <div class="slider-block" id="diffSliderBlock">
+          <div class="diff-pill-row"><div class="diff-pill" id="diffPill">Easy</div></div>
+          <div class="diff-track-wrap" id="diffTrackWrap">
+            <div class="diff-base-track"></div>
+            <div class="diff-fill-bar" id="diffFillBar"></div>
+            <div class="diff-dots-overlay" id="diffDotsOverlay">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <input type="range" min="0" max="4" step="1" value="1" id="diffSlider" aria-label="Difficulty">
+          </div>
+          <div class="diff-numbers" id="diffNumbers">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          </div>
         </div>
-        <button class="modal-cancel" id="modalCancel">Cancel</button>
+        <button class="primary-btn" id="diffStart">Start</button>
       </div>
     </div>
 
@@ -215,6 +225,11 @@
     </div>
 
   </div>
-  <script src="app.js?v=25"></script>
+  <script src="puzzles/level1.js"></script>
+  <script src="puzzles/level2.js"></script>
+  <script src="puzzles/level3.js"></script>
+  <script src="puzzles/level4.js"></script>
+  <script src="puzzles/level5.js"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>

@@ -101,9 +101,32 @@ class SoundManager {
   }
 }
 
-// ── Puzzle generator ──────────────────────────────────────────────────────────
+// ── Puzzle bank ────────────────────────────────────────────────────────────────
 
-class SudokuGenerator {
+const DIFFICULTY_KEYS = {
+  beginner:     'level1',
+  easy:         'level2',
+  intermediate: 'level3',
+  hard:         'level4',
+  expert:       'level5',
+};
+
+const DIFFICULTY_ORDER = ['beginner', 'easy', 'intermediate', 'hard', 'expert'];
+const DIFFICULTY_LABELS = ['Beginner', 'Easy', 'Intermediate', 'Hard', 'Expert'];
+
+// 9x9-grid symmetries that map rows/cols/boxes onto rows/cols/boxes.
+const GRID_SYMMETRIES = [
+  (g, r, c) => g[r][c],       // identity
+  (g, r, c) => g[c][r],       // transpose
+  (g, r, c) => g[8-c][r],     // rotate 90
+  (g, r, c) => g[8-r][8-c],   // rotate 180
+  (g, r, c) => g[c][8-r],     // rotate 270
+  (g, r, c) => g[r][8-c],     // mirror left-right
+  (g, r, c) => g[8-r][c],     // mirror top-bottom
+  (g, r, c) => g[8-c][8-r],   // anti-transpose
+];
+
+class PuzzleBank {
   static shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -113,96 +136,66 @@ class SudokuGenerator {
     return a;
   }
 
-  static createSolvedGrid() {
-    const base = [
-      [1,2,3,4,5,6,7,8,9],
-      [4,5,6,7,8,9,1,2,3],
-      [7,8,9,1,2,3,4,5,6],
-      [2,3,4,5,6,7,8,9,1],
-      [5,6,7,8,9,1,2,3,4],
-      [8,9,1,2,3,4,5,6,7],
-      [3,4,5,6,7,8,9,1,2],
-      [6,7,8,9,1,2,3,4,5],
-      [9,1,2,3,4,5,6,7,8],
-    ];
-    const perm = this.shuffle([1,2,3,4,5,6,7,8,9]);
-    let g = base.map(row => row.map(n => perm[n - 1]));
-
-    for (let b = 0; b < 3; b++) {
-      const [i0, i1, i2] = this.shuffle([0, 1, 2]);
-      const rows = [g[b*3+i0], g[b*3+i1], g[b*3+i2]];
-      g[b*3] = rows[0]; g[b*3+1] = rows[1]; g[b*3+2] = rows[2];
-    }
-    for (let s = 0; s < 3; s++) {
-      const [j0, j1, j2] = this.shuffle([0, 1, 2]);
-      for (let r = 0; r < 9; r++) {
-        const orig = [...g[r]];
-        g[r][s*3]   = orig[s*3+j0];
-        g[r][s*3+1] = orig[s*3+j1];
-        g[r][s*3+2] = orig[s*3+j2];
-      }
-    }
-    const [b0, b1, b2] = this.shuffle([0, 1, 2]);
-    g = [...g.slice(b0*3, b0*3+3), ...g.slice(b1*3, b1*3+3), ...g.slice(b2*3, b2*3+3)];
-    const [s0, s1, s2] = this.shuffle([0, 1, 2]);
-    g = g.map(row => [
-      row[s0*3], row[s0*3+1], row[s0*3+2],
-      row[s1*3], row[s1*3+1], row[s1*3+2],
-      row[s2*3], row[s2*3+1], row[s2*3+2],
-    ]);
+  static toGrid(str) {
+    const g = [];
+    for (let r = 0; r < 9; r++) g.push([...str.slice(r * 9, r * 9 + 9)].map(Number));
     return g;
   }
 
-  static isValid(g, row, col, num) {
-    for (let i = 0; i < 9; i++) {
-      if (g[row][i] === num || g[i][col] === num) return false;
+  // Builds a permutation of 0-8 that reorders the 3 bands/stacks and, within
+  // each, reorders its 3 rows/cols — preserves row/column/box validity.
+  static bandPermutation() {
+    const bandOrder = this.shuffle([0, 1, 2]);
+    const perm = [];
+    for (const band of bandOrder) {
+      const within = this.shuffle([0, 1, 2]);
+      for (const i of within) perm.push(band * 3 + i);
     }
-    const br = Math.floor(row/3)*3, bc = Math.floor(col/3)*3;
-    for (let r = br; r < br+3; r++)
-      for (let c = bc; c < bc+3; c++)
-        if (g[r][c] === num) return false;
-    return true;
+    return perm;
   }
 
-  static countSolutions(g) {
-    let count = 0;
-    const solve = () => {
-      let er = -1, ec = -1;
-      outer: for (let r = 0; r < 9; r++)
-        for (let c = 0; c < 9; c++)
-          if (!g[r][c]) { er = r; ec = c; break outer; }
-      if (er === -1) { count++; return count > 1; }
-      for (let n = 1; n <= 9; n++) {
-        if (this.isValid(g, er, ec, n)) {
-          g[er][ec] = n;
-          if (solve()) return true;
-          g[er][ec] = 0;
-        }
-      }
-      return false;
+  static applyRowColPermutation(g, rowPerm, colPerm) {
+    return rowPerm.map(r => colPerm.map(c => g[r][c]));
+  }
+
+  static applySymmetry(g, sym) {
+    const out = [];
+    for (let r = 0; r < 9; r++) {
+      const row = [];
+      for (let c = 0; c < 9; c++) row.push(sym(g, r, c));
+      out.push(row);
+    }
+    return out;
+  }
+
+  static applyDigitMap(g, digitMap) {
+    return g.map(row => row.map(v => v === 0 ? 0 : digitMap[v]));
+  }
+
+  // Applies a random combination of digit relabeling, band/stack shuffling,
+  // and grid symmetry to puzzle+solution in lockstep, so the underlying
+  // Sudoku stays identical (same solution, same solving techniques) while
+  // looking different each time it's picked.
+  static transform(puzzle, solution) {
+    const sym = GRID_SYMMETRIES[Math.floor(Math.random() * GRID_SYMMETRIES.length)];
+    const rowPerm = this.bandPermutation();
+    const colPerm = this.bandPermutation();
+    const digitMap = { 0: 0 };
+    this.shuffle([1,2,3,4,5,6,7,8,9]).forEach((n, i) => { digitMap[i + 1] = n; });
+
+    const apply = g => {
+      g = this.applySymmetry(g, sym);
+      g = this.applyRowColPermutation(g, rowPerm, colPerm);
+      g = this.applyDigitMap(g, digitMap);
+      return g;
     };
-    solve();
-    return count;
+    return { puzzle: apply(puzzle), solution: apply(solution) };
   }
 
-  static generate(difficulty) {
-    const solution = this.createSolvedGrid();
-    const puzzle = solution.map(r => [...r]);
-    const clues = { easy: 36, medium: 28, hard: 22 }[difficulty];
-    const positions = this.shuffle([...Array(81).keys()]);
-    let removed = 0;
-    for (const pos of positions) {
-      if (removed >= 81 - clues) break;
-      const r = Math.floor(pos / 9), c = pos % 9;
-      const val = puzzle[r][c];
-      puzzle[r][c] = 0;
-      if (this.countSolutions(puzzle.map(row => [...row])) === 1) {
-        removed++;
-      } else {
-        puzzle[r][c] = val;
-      }
-    }
-    return { puzzle, solution };
+  static pick(difficulty) {
+    const list = window.SUDOKU_DATA[DIFFICULTY_KEYS[difficulty]];
+    const entry = list[Math.floor(Math.random() * list.length)];
+    return this.transform(this.toGrid(entry.puzzle), this.toGrid(entry.solution));
   }
 }
 
@@ -252,19 +245,18 @@ class SudokuGame {
     // ── New Game button ───────────────────────────────────────────────────────
     document.getElementById('newGameBtn').addEventListener('click', () => this.openNewGameModal());
 
-    document.getElementById('modalCancel').addEventListener('click', () => {
-      document.getElementById('newGameModal').hidden = true;
-    });
     document.getElementById('newGameModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) e.currentTarget.hidden = true;
     });
-    document.querySelectorAll('.diff-card').forEach(card =>
-      card.addEventListener('click', () => {
-        this.difficulty = card.dataset.difficulty;
-        document.getElementById('newGameModal').hidden = true;
-        this.newGame();
-      })
-    );
+    document.getElementById('modalClose').addEventListener('click', () => {
+      document.getElementById('newGameModal').hidden = true;
+    });
+    this.initDifficultySlider();
+    document.getElementById('diffStart').addEventListener('click', () => {
+      this.difficulty = DIFFICULTY_ORDER[+document.getElementById('diffSlider').value];
+      document.getElementById('newGameModal').hidden = true;
+      this.newGame();
+    });
 
     // ── Win overlay ───────────────────────────────────────────────────────────
     document.getElementById('winNewGame').addEventListener('click', () => {
@@ -361,8 +353,79 @@ class SudokuGame {
   }
 
   openNewGameModal() {
-    document.getElementById('modalWarning').hidden = this.complete || this.seconds === 0;
+    const slider = document.getElementById('diffSlider');
+    slider.value = DIFFICULTY_ORDER.indexOf(this.difficulty);
+    delete document.getElementById('diffPill').dataset.last;
     document.getElementById('newGameModal').hidden = false;
+    this.renderDifficultySlider();
+  }
+
+  initDifficultySlider() {
+    const slider = document.getElementById('diffSlider');
+    const sliderBlock = document.getElementById('diffSliderBlock');
+
+    const stepFromClientX = clientX => {
+      const rect = slider.getBoundingClientRect();
+      const min = rect.left + 15, max = rect.right - 15;
+      const frac = Math.max(0, Math.min(1, (clientX - min) / (max - min)));
+      return Math.round(frac * 4);
+    };
+    const jumpTo = v => {
+      if (+slider.value !== v) {
+        slider.value = v;
+        this.renderDifficultySlider();
+      }
+    };
+
+    sliderBlock.addEventListener('dragstart', e => e.preventDefault());
+
+    slider.addEventListener('input', () => this.renderDifficultySlider());
+    slider.addEventListener('pointerdown', () => slider.classList.add('active'));
+    slider.addEventListener('pointerup', () => slider.classList.remove('active'));
+    slider.addEventListener('pointercancel', () => slider.classList.remove('active'));
+
+    sliderBlock.addEventListener('pointerdown', e => {
+      if (e.target === slider) return;
+      e.preventDefault();
+      slider.classList.add('active');
+      jumpTo(stepFromClientX(e.clientX));
+      sliderBlock.setPointerCapture(e.pointerId);
+    });
+    sliderBlock.addEventListener('pointermove', e => {
+      if (e.buttons === 1 && e.target !== slider) jumpTo(stepFromClientX(e.clientX));
+    });
+    sliderBlock.addEventListener('pointerup', () => slider.classList.remove('active'));
+    sliderBlock.addEventListener('pointercancel', () => slider.classList.remove('active'));
+
+    [...document.getElementById('diffNumbers').children].forEach((el, idx) => {
+      el.addEventListener('click', () => jumpTo(idx));
+    });
+  }
+
+  renderDifficultySlider() {
+    const slider = document.getElementById('diffSlider');
+    const wrap = document.getElementById('diffTrackWrap');
+    const pill = document.getElementById('diffPill');
+    const fillBar = document.getElementById('diffFillBar');
+    const numbers = document.getElementById('diffNumbers');
+    const dots = document.getElementById('diffDotsOverlay');
+
+    const i = +slider.value;
+    const travel = wrap.clientWidth - 30;
+    fillBar.style.width = Math.max(0, 5 + (i / 4) * travel) + 'px';
+
+    if (pill.dataset.last !== String(i)) {
+      pill.textContent = DIFFICULTY_LABELS[i];
+      if (pill.dataset.last !== undefined) {
+        pill.classList.remove('bounce');
+        void pill.offsetWidth;
+        pill.classList.add('bounce');
+      }
+      pill.dataset.last = String(i);
+    }
+
+    [...numbers.children].forEach((el, idx) => el.classList.toggle('on', idx === i));
+    [...dots.children].forEach((el, idx) => el.classList.toggle('on', idx <= i));
   }
 
   applySettings() {
@@ -381,7 +444,7 @@ class SudokuGame {
 
   newGame() {
     this.stopTimer();
-    const { puzzle, solution } = SudokuGenerator.generate(this.difficulty);
+    const { puzzle, solution } = PuzzleBank.pick(this.difficulty);
     this.solution = solution;
     this.board    = puzzle.map(r => [...r]);
     this.given    = puzzle.map(r => r.map(v => v !== 0));
