@@ -193,9 +193,12 @@ class PuzzleBank {
   }
 
   static pick(difficulty) {
-    const list = window.SUDOKU_DATA[DIFFICULTY_KEYS[difficulty]];
-    const entry = list[Math.floor(Math.random() * list.length)];
-    return this.transform(this.toGrid(entry.puzzle), this.toGrid(entry.solution));
+    const levelKey = DIFFICULTY_KEYS[difficulty];
+    const list = window.SUDOKU_DATA[levelKey];
+    const index = Math.floor(Math.random() * list.length);
+    const entry = list[index];
+    const { puzzle, solution } = this.transform(this.toGrid(entry.puzzle), this.toGrid(entry.solution));
+    return { puzzle, solution, id: `${levelKey}-${index}` };
   }
 }
 
@@ -346,6 +349,10 @@ class SudokuGame {
 
     document.addEventListener('keydown', e => this.handleKey(e));
     window.addEventListener('beforeunload', () => this.saveState());
+    window.addEventListener('pagehide', () => this.saveState());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.saveState();
+    });
 
     const warmUp = () => { this.sound.warmUp(); };
     document.addEventListener('pointerdown', warmUp, { once: true });
@@ -444,8 +451,9 @@ class SudokuGame {
 
   newGame() {
     this.stopTimer();
-    const { puzzle, solution } = PuzzleBank.pick(this.difficulty);
+    const { puzzle, solution, id } = PuzzleBank.pick(this.difficulty);
     this.solution = solution;
+    this.puzzleId = id;
     this.board    = puzzle.map(r => [...r]);
     this.given    = puzzle.map(r => r.map(v => v !== 0));
     this.notes    = Array.from({length: 9}, () => Array.from({length: 9}, () => new Set()));
@@ -463,6 +471,7 @@ class SudokuGame {
     this.updateMistakesDisplay();
     document.getElementById('currentDiff').textContent =
       this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
+    document.getElementById('puzzleId').textContent = this.puzzleId;
     this.buildBoard(true);
     this.updateNumpad();
     this.applySettings();
@@ -1363,6 +1372,7 @@ showReactionBubble(el) {
         given:      this.given,
         notes:      this.notes.map(row => row.map(cell => [...cell])),
         difficulty: this.difficulty,
+        puzzleId:   this.puzzleId,
         seconds:    this.seconds,
         mistakes:   this.mistakes,
         hintsUsed:  this.hintsUsed,
@@ -1381,6 +1391,7 @@ showReactionBubble(el) {
       this.given      = s.given;
       this.notes      = s.notes.map(row => row.map(cell => new Set(cell)));
       this.difficulty = s.difficulty;
+      this.puzzleId   = s.puzzleId;
       this.seconds    = s.seconds;
       this.mistakes   = s.mistakes;
       this.hintsUsed  = s.hintsUsed;
@@ -1394,6 +1405,7 @@ showReactionBubble(el) {
       this.updateMistakesDisplay();
       document.getElementById('currentDiff').textContent =
         this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
+      document.getElementById('puzzleId').textContent = this.puzzleId || '';
       this.buildBoard();
       this.updateNumpad();
       this.applySettings();
