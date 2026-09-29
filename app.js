@@ -269,14 +269,32 @@ class SudokuGame {
       document.getElementById('gameOverOverlay').hidden = true;
     });
 
-    // ── Gear / settings popover ───────────────────────────────────────────────
-    const popover = document.getElementById('settingsPopover');
-    document.getElementById('gearBtn').addEventListener('click', e => {
-      e.stopPropagation();
-      popover.hidden = !popover.hidden;
+    // ── Gear / settings modal ─────────────────────────────────────────────────
+    const settingsModal = document.getElementById('settingsModal');
+    document.getElementById('gearBtn').addEventListener('click', () => {
+      settingsModal.hidden = false;
     });
-    document.addEventListener('click', () => { popover.hidden = true; });
-    popover.addEventListener('click', e => e.stopPropagation());
+    document.getElementById('settingsClose').addEventListener('click', () => {
+      settingsModal.hidden = true;
+    });
+    settingsModal.addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    });
+
+    document.getElementById('settingsTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.settings-tab');
+      if (!tab) return;
+      settingsModal.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t === tab));
+      settingsModal.querySelectorAll('.settings-panel').forEach(p => {
+        p.hidden = p.id !== tab.dataset.panel;
+      });
+    });
+
+    const languageSelect = document.getElementById('languageSelect');
+    languageSelect.value = localStorage.getItem('language') || 'en';
+    languageSelect.addEventListener('change', e => {
+      localStorage.setItem('language', e.target.value);
+    });
 
     document.getElementById('darkToggle').addEventListener('change', e => applyTheme(e.target.checked));
     document.getElementById('soundToggle').addEventListener('change', e => {

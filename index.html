@@ -25,66 +25,6 @@
         <button class="header-btn icon-btn" id="gearBtn" aria-label="Settings">⚙️</button>
       </div>
 
-      <div class="settings-popover" id="settingsPopover" hidden>
-        <div class="setting-group">
-          <div class="setting-group-label">Theme</div>
-          <div class="setting-row">
-            <span class="setting-label">Dark mode</span>
-            <label class="toggle">
-              <input type="checkbox" id="darkToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-        </div>
-        <div class="setting-group">
-          <div class="setting-group-label">Rules</div>
-          <div class="setting-row">
-            <span class="setting-label">Hints</span>
-            <label class="toggle">
-              <input type="checkbox" id="hintsToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">Mistakes</span>
-            <label class="toggle">
-              <input type="checkbox" id="mistakesToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">Smart notes</span>
-            <label class="toggle">
-              <input type="checkbox" id="smartNotesToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">Timer</span>
-            <label class="toggle">
-              <input type="checkbox" id="timerToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-        </div>
-        <div class="setting-group">
-          <div class="setting-group-label">Effects</div>
-          <div class="setting-row">
-            <span class="setting-label">Sound</span>
-            <label class="toggle">
-              <input type="checkbox" id="soundToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">Vibration</span>
-            <label class="toggle">
-              <input type="checkbox" id="vibrationToggle">
-              <span class="toggle-thumb"></span>
-            </label>
-          </div>
-        </div>
-      </div>
     </header>
 
     <div class="main">
@@ -152,6 +92,98 @@
         }
       } catch {}
     </script>
+    </div>
+
+    <!-- Settings modal -->
+    <div class="modal-overlay" id="settingsModal" hidden>
+      <div class="modal settings-modal">
+        <button class="modal-close" id="settingsClose" aria-label="Close">✕</button>
+        <h2 class="modal-title">Settings</h2>
+
+        <div class="settings-tabs" id="settingsTabs">
+          <button class="settings-tab active" data-panel="panel-general" type="button">General</button>
+          <button class="settings-tab" data-panel="panel-gameplay" type="button">Game</button>
+          <button class="settings-tab" data-panel="panel-feedback" type="button">Feedback</button>
+        </div>
+
+        <div class="settings-body">
+
+          <div class="settings-panel" id="panel-general">
+            <div class="setting-group">
+              <div class="setting-row">
+                <span class="setting-label">Dark mode</span>
+                <label class="toggle">
+                  <input type="checkbox" id="darkToggle">
+                  <span class="toggle-thumb"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span class="setting-label">Language</span>
+                <select class="setting-select" id="languageSelect">
+                  <option value="en">🇬🇧 English</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-gameplay" hidden>
+            <div class="setting-group">
+            <div class="setting-row">
+              <span class="setting-label">Hints</span>
+              <label class="toggle">
+                <input type="checkbox" id="hintsToggle">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">Mistakes</span>
+              <label class="toggle">
+                <input type="checkbox" id="mistakesToggle">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">Timer</span>
+              <label class="toggle">
+                <input type="checkbox" id="timerToggle">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">Smart notes</span>
+              <label class="toggle">
+                <input type="checkbox" id="smartNotesToggle">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-feedback" hidden>
+            <div class="setting-group">
+              <div class="setting-row">
+                <span class="setting-label">Sound</span>
+                <label class="toggle">
+                  <input type="checkbox" id="soundToggle">
+                  <span class="toggle-thumb"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">Vibration</span>
+                <label class="toggle">
+                  <input type="checkbox" id="vibrationToggle">
+                  <span class="toggle-thumb"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <!-- Technique analysis modal -->
