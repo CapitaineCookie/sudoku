@@ -132,12 +132,15 @@ body {
 .header-btn:active { transform: scale(0.95); }
 
 .icon-btn {
-  padding: 8px 12px;
-  font-size: 22px;
+  padding: 10px 14px;
+  font-size: 24px;
   color: var(--navy);
   line-height: 1;
   background: transparent;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-right {
@@ -404,12 +407,18 @@ html.dark .settings-tab.active {
 }
 
 .ctrl-btn:active { transform: scale(0.93); }
-.ctrl-btn.active { background: var(--blue-pale); }
+.ctrl-btn.active {
+  background: var(--blue);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--blue) 50%, transparent);
+}
+.ctrl-btn.active .ctrl-icon,
+.ctrl-btn.active .ctrl-label { color: #fff; }
 
 .ctrl-icon {
   font-size: 22px;
   line-height: 1;
   color: var(--navy);
+  display: flex;
 }
 
 .ctrl-label {
