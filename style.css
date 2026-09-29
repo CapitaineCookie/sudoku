@@ -257,18 +257,6 @@ body {
   text-align: right;
 }
 
-.puzzle-id {
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  opacity: 0.55;
-  margin-top: 14px;
-  font-variant-numeric: tabular-nums;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
 /* ── Board ─────────────────────────────────────────────────────────────────── */
 
 .board-wrap {

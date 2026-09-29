@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
   <title>Sudoku</title>
   <script>if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark');</script>
 </head>
@@ -134,7 +134,6 @@
       <button class="num-btn" data-num="9">9<span class="num-count"></span></button>
     </div>
 
-    <div class="puzzle-id" id="puzzleId"></div>
 <script>
       try {
         const s = JSON.parse(localStorage.getItem('gameState') || '{}');
@@ -232,6 +231,6 @@
   <script src="puzzles/level3.js"></script>
   <script src="puzzles/level4.js"></script>
   <script src="puzzles/level5.js"></script>
-  <script src="app.js?v=35"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

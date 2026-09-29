@@ -362,9 +362,9 @@ class SudokuGame {
   openNewGameModal() {
     const slider = document.getElementById('diffSlider');
     slider.value = DIFFICULTY_ORDER.indexOf(this.difficulty);
-    delete document.getElementById('diffPill').dataset.last;
+    document.getElementById('diffPill').classList.remove('bounce');
     document.getElementById('newGameModal').hidden = false;
-    this.renderDifficultySlider();
+    this.renderDifficultySlider(true);
   }
 
   initDifficultySlider() {
@@ -409,7 +409,7 @@ class SudokuGame {
     });
   }
 
-  renderDifficultySlider() {
+  renderDifficultySlider(skipAnim = false) {
     const slider = document.getElementById('diffSlider');
     const wrap = document.getElementById('diffTrackWrap');
     const pill = document.getElementById('diffPill');
@@ -421,14 +421,13 @@ class SudokuGame {
     const travel = wrap.clientWidth - 30;
     fillBar.style.width = Math.max(0, 5 + (i / 4) * travel) + 'px';
 
-    if (pill.dataset.last !== String(i)) {
+    if (pill.textContent !== DIFFICULTY_LABELS[i]) {
       pill.textContent = DIFFICULTY_LABELS[i];
-      if (pill.dataset.last !== undefined) {
+      if (!skipAnim) {
         pill.classList.remove('bounce');
         void pill.offsetWidth;
         pill.classList.add('bounce');
       }
-      pill.dataset.last = String(i);
     }
 
     [...numbers.children].forEach((el, idx) => el.classList.toggle('on', idx === i));
@@ -471,7 +470,6 @@ class SudokuGame {
     this.updateMistakesDisplay();
     document.getElementById('currentDiff').textContent =
       this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
-    document.getElementById('puzzleId').textContent = this.puzzleId;
     this.buildBoard(true);
     this.updateNumpad();
     this.applySettings();
@@ -1405,7 +1403,6 @@ showReactionBubble(el) {
       this.updateMistakesDisplay();
       document.getElementById('currentDiff').textContent =
         this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
-      document.getElementById('puzzleId').textContent = this.puzzleId || '';
       this.buildBoard();
       this.updateNumpad();
       this.applySettings();
