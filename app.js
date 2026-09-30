@@ -281,6 +281,16 @@ class SudokuGame {
       if (e.target === e.currentTarget) e.currentTarget.hidden = true;
     });
 
+    settingsModal.querySelectorAll('.setting-row').forEach(row => {
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      if (!checkbox) return;
+      row.addEventListener('click', e => {
+        if (e.target === checkbox || e.target.closest('label')) return;
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+    });
+
     document.getElementById('settingsTabs').addEventListener('click', e => {
       const tab = e.target.closest('.settings-tab');
       if (!tab) return;

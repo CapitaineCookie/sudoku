@@ -204,6 +204,11 @@ html.dark .settings-tab.active {
   justify-content: space-between;
   padding: 12px 4px;
   gap: 24px;
+  cursor: pointer;
+}
+
+.setting-row:has(.setting-select) {
+  cursor: default;
 }
 
 .setting-label {
