@@ -58,10 +58,10 @@ class SoundManager {
 
   play(type, freq = null) {
     if (!this.enabled) return;
-    const maxConcurrent = { correct: 2, reveal: 2, error: 1, erase: 1, note: 1, hint: 1, digit: 1, win: 1, lose: 1 };
+    const maxConcurrent = { correct: 2, reveal: 2, error: 1, erase: 1, note: 1, hint: 1, digit: 1, win: 1 };
     const count = this.active.get(type) || 0;
     if (count >= (maxConcurrent[type] ?? 1)) return;
-    const durations = { correct: 230, reveal: 75, error: 200, erase: 80, note: 80, hint: 400, digit: 450, win: 700, lose: 700 };
+    const durations = { correct: 230, reveal: 75, error: 200, erase: 80, note: 80, hint: 400, digit: 450, win: 700 };
     this.active.set(type, count + 1);
     setTimeout(() => this.active.set(type, (this.active.get(type) || 1) - 1), durations[type] ?? 200);
     try {
@@ -88,11 +88,6 @@ class SoundManager {
           break;
         case 'win':
           [523, 659, 784, 1047].forEach((f, i) =>
-            this.tone(f, 'sine', i * 0.15, 0.25)
-          );
-          break;
-        case 'lose':
-          [523, 440, 349, 262].forEach((f, i) =>
             this.tone(f, 'sine', i * 0.15, 0.25)
           );
           break;
@@ -223,7 +218,6 @@ class SudokuGame {
     this.settings = {
       showHints:      localStorage.getItem('showHints')      === 'true',
       showTimer:      localStorage.getItem('showTimer')      !== 'false',
-      countMistakes:  localStorage.getItem('countMistakes')  !== 'false',
       smartNotes:     localStorage.getItem('smartNotes')     !== 'false',
       vibration:      localStorage.getItem('vibration')      !== 'false',
     };
@@ -237,7 +231,6 @@ class SudokuGame {
   bindDOM() {
     this.boardEl    = document.getElementById('board');
     this.timerEl    = document.getElementById('timer');
-    this.mistakesEl = document.getElementById('mistakes');
     this.notesBtn   = document.getElementById('notesBtn');
     this.winOverlay = document.getElementById('winOverlay');
     this.winTimeEl  = document.getElementById('winTime');
@@ -264,9 +257,6 @@ class SudokuGame {
     // ── Win overlay ───────────────────────────────────────────────────────────
     document.getElementById('winNewGame').addEventListener('click', () => {
       this.winOverlay.hidden = true;
-    });
-    document.getElementById('gameOverNewGame').addEventListener('click', () => {
-      document.getElementById('gameOverOverlay').hidden = true;
     });
 
     // ── Gear / settings modal ─────────────────────────────────────────────────
@@ -320,11 +310,6 @@ class SudokuGame {
     document.getElementById('timerToggle').addEventListener('change', e => {
       this.settings.showTimer = e.target.checked;
       localStorage.setItem('showTimer', e.target.checked);
-      this.applySettings();
-    });
-    document.getElementById('mistakesToggle').addEventListener('change', e => {
-      this.settings.countMistakes = e.target.checked;
-      localStorage.setItem('countMistakes', e.target.checked);
       this.applySettings();
     });
     document.getElementById('smartNotesToggle').addEventListener('change', e => {
@@ -437,10 +422,8 @@ class SudokuGame {
   applySettings() {
     document.getElementById('hintBtn').style.display = this.settings.showHints ? '' : 'none';
     this.timerEl.style.visibility = this.settings.showTimer ? '' : 'hidden';
-    this.mistakesEl.style.display = this.settings.countMistakes ? '' : 'none';
     document.getElementById('hintsToggle').checked       = this.settings.showHints;
     document.getElementById('timerToggle').checked       = this.settings.showTimer;
-    document.getElementById('mistakesToggle').checked    = this.settings.countMistakes;
     document.getElementById('smartNotesToggle').checked  = this.settings.smartNotes;
     document.getElementById('vibrationToggle').checked   = this.settings.vibration;
     document.getElementById('soundToggle').checked       = this.sound.enabled;
@@ -457,14 +440,12 @@ class SudokuGame {
     this.given    = puzzle.map(r => r.map(v => v !== 0));
     this.notes    = Array.from({length: 9}, () => Array.from({length: 9}, () => new Set()));
     this.history  = [];
-    this.mistakes = 0;
     this.hintsUsed = 0;
     this.seconds  = 0;
     this.complete = false;
     this.selected = null;
     this.notesMode = false;
     this.notesBtn.classList.remove('active');
-    this.updateMistakesDisplay();
     document.getElementById('currentDiff').textContent =
       this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
     this.buildBoard(true);
@@ -636,17 +617,9 @@ class SudokuGame {
         this.board[r][c] = 0;
         this.sound.play('erase');
       } else {
-        const wasWrong = this.board[r][c] !== 0 && this.board[r][c] !== this.solution[r][c];
         this.board[r][c] = num;
-        if (num !== this.solution[r][c] && !wasWrong) {
-          this.mistakes++;
-          this.updateMistakesDisplay();
+        if (num !== this.solution[r][c]) {
           this.sound.play('error');
-          if (this.mistakes >= 3 && this.settings.countMistakes) {
-            this.updateBoard();
-            setTimeout(() => this.gameOver(), 200);
-            return;
-          }
           flashError = true;
         } else {
           this.sound.play('correct');
@@ -866,92 +839,6 @@ class SudokuGame {
     );
   }
 
-  applyEliminationStep(cands) {
-    const c = cands.map(row => row.map(s => new Set(s)));
-    const units = [];
-    for (let i = 0; i < 9; i++) {
-      units.push(Array.from({length: 9}, (_, j) => [i, j]));
-      units.push(Array.from({length: 9}, (_, j) => [j, i]));
-    }
-    for (let br = 0; br < 3; br++)
-      for (let bc = 0; bc < 3; bc++) {
-        const box = [];
-        for (let r = br*3; r < br*3+3; r++)
-          for (let col = bc*3; col < bc*3+3; col++)
-            box.push([r, col]);
-        units.push(box);
-      }
-
-    // Naked pairs
-    for (const unit of units) {
-      const twos = unit.filter(([r, col]) => c[r][col].size === 2);
-      for (let i = 0; i < twos.length; i++)
-        for (let j = i+1; j < twos.length; j++) {
-          const [r1, c1] = twos[i], [r2, c2] = twos[j];
-          const s1 = c[r1][c1], s2 = c[r2][c2];
-          if (s1.size !== 2 || s2.size !== 2) continue;
-          let match = true;
-          for (const n of s1) if (!s2.has(n)) { match = false; break; }
-          if (!match) continue;
-          for (const [r, col] of unit) {
-            if ((r === r1 && col === c1) || (r === r2 && col === c2)) continue;
-            for (const n of s1) c[r][col].delete(n);
-          }
-        }
-    }
-
-    // Pointing pairs: box → row/col
-    for (let br = 0; br < 3; br++)
-      for (let bc = 0; bc < 3; bc++)
-        for (let n = 1; n <= 9; n++) {
-          const cells = [];
-          for (let r = br*3; r < br*3+3; r++)
-            for (let col = bc*3; col < bc*3+3; col++)
-              if (c[r][col].has(n)) cells.push([r, col]);
-          if (!cells.length) continue;
-          if (cells.every(([r]) => r === cells[0][0])) {
-            const row = cells[0][0];
-            for (let col = 0; col < 9; col++)
-              if (Math.floor(col/3) !== bc) c[row][col].delete(n);
-          }
-          if (cells.every(([, col]) => col === cells[0][1])) {
-            const col = cells[0][1];
-            for (let r = 0; r < 9; r++)
-              if (Math.floor(r/3) !== br) c[r][col].delete(n);
-          }
-        }
-
-    // Box-line reduction: row/col → box
-    for (let i = 0; i < 9; i++)
-      for (let n = 1; n <= 9; n++) {
-        const rc = Array.from({length: 9}, (_, j) => [i, j]).filter(([r, col]) => c[r][col].has(n));
-        if (rc.length && rc.every(([, col]) => Math.floor(col/3) === Math.floor(rc[0][1]/3))) {
-          const bc2 = Math.floor(rc[0][1]/3), br2 = Math.floor(i/3);
-          for (let r = br2*3; r < br2*3+3; r++)
-            for (let col = bc2*3; col < bc2*3+3; col++)
-              if (r !== i) c[r][col].delete(n);
-        }
-        const cc = Array.from({length: 9}, (_, j) => [j, i]).filter(([r]) => c[r][i].has(n));
-        if (cc.length && cc.every(([r]) => Math.floor(r/3) === Math.floor(cc[0][0]/3))) {
-          const br2 = Math.floor(cc[0][0]/3), bc2 = Math.floor(i/3);
-          for (let r = br2*3; r < br2*3+3; r++)
-            for (let col = bc2*3; col < bc2*3+3; col++)
-              if (col !== i) c[r][col].delete(n);
-        }
-      }
-
-    return c;
-  }
-
-  isHiddenSingleInLine(r, c, num, cands) {
-    let count = 0;
-    for (let j = 0; j < 9; j++) if (cands[r][j].has(num)) count++;
-    if (count === 1) return true;
-    count = 0;
-    for (let i = 0; i < 9; i++) if (cands[i][c].has(num)) count++;
-    return count === 1;
-  }
-
   isHiddenSingleInBox(r, c, num, cands) {
     let count = 0;
     const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
@@ -968,17 +855,11 @@ class SudokuGame {
     this.board[r][c] = saved;
     if (cands[r][c].size === 1) return null;
     if (this.isHiddenSingleInBox(r, c, num, cands)) return null;
-    if (this.isHiddenSingleInLine(r, c, num, cands)) return 'clever';
-    const reduced = this.applyEliminationStep(cands);
-    if (reduced[r][c].size === 1) return null;
-    if (this.isHiddenSingleInBox(r, c, num, reduced)) return null;
-    if (this.isHiddenSingleInLine(r, c, num, reduced)) return 'clever';
     return 'clever';
   }
 
 showReactionBubble(el) {
-    const pairs = [['💥', 'Boom!'], ['💪', 'Oof!'], ['🧠', 'Damn!'], ['👍', 'Nice!']];
-    const [emoji, word] = pairs[Math.floor(Math.random() * pairs.length)];
+    const [emoji, word] = ['👍', 'Nice!'];
 
     const rect   = el.getBoundingClientRect();
     const bubble = document.createElement('div');
@@ -1009,34 +890,16 @@ showReactionBubble(el) {
     return true;
   }
 
-  gameOver() {
-    this.complete = true;
-    this.stopTimer();
-    this.board = this.solution.map(r => [...r]);
-    this.given = Array.from({length: 9}, () => Array(9).fill(true));
-    this.updateBoard();
-    this.saveState();
-    setTimeout(() => {
-      this.sound.play('lose');
-      document.getElementById('gameOverOverlay').hidden = false;
-    }, 300);
-  }
-
   showWin() {
     const m = Math.floor(this.seconds / 60);
     const s = this.seconds % 60;
     const time = m ? `${m}m ${s}s` : `${s}s`;
-    const hint = this.hintsUsed ? ` · ${this.hintsUsed} hint${this.hintsUsed > 1 ? 's' : ''}` : '';
-    this.winTimeEl.textContent = `Solved in ${time}${hint}`;
+    this.winTimeEl.textContent = `Solved in ${time}`;
     this.sound.play('win');
     this.winOverlay.hidden = false;
   }
 
   // ── UI helpers ──────────────────────────────────────────────────────────────
-
-  updateMistakesDisplay() {
-    this.mistakesEl.textContent = `Mistakes: ${this.mistakes}/3`;
-  }
 
   animateCompletedDigit(num, fromRow, fromCol) {
     const cells = [];
@@ -1094,7 +957,6 @@ showReactionBubble(el) {
         difficulty: this.difficulty,
         puzzleId:   this.puzzleId,
         seconds:    this.seconds,
-        mistakes:   this.mistakes,
         hintsUsed:  this.hintsUsed,
         complete:   this.complete,
       }));
@@ -1113,14 +975,12 @@ showReactionBubble(el) {
       this.difficulty = s.difficulty;
       this.puzzleId   = s.puzzleId;
       this.seconds    = s.seconds;
-      this.mistakes   = s.mistakes;
       this.hintsUsed  = s.hintsUsed;
       this.complete   = s.complete;
       this.history    = [];
       this.selected   = null;
       this.notesMode  = false;
       this.notesBtn.classList.remove('active');
-      this.updateMistakesDisplay();
       document.getElementById('currentDiff').textContent =
         this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
       this.buildBoard();

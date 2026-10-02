@@ -302,13 +302,6 @@ html.dark .settings-tab.active {
   text-align: left;
 }
 
-.mistakes {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  text-align: right;
-}
-
 /* ── Board ─────────────────────────────────────────────────────────────────── */
 
 .board-wrap {
